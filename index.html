@@ -15,7 +15,7 @@
             align-items: center;
         }
 
-        #loginBox, #deviceBox, #chatBox {
+        #loginBox, #chatBox {
             width: 90%;
             max-width: 400px;
             background: white;
@@ -25,7 +25,6 @@
         }
 
         #chatBox { display: none; height: 80vh; flex-direction: column; }
-        #deviceBox { display: none; }
 
         #messages {
             flex: 1;
@@ -36,12 +35,32 @@
         }
 
         .msg {
-            padding: 8px;
-            background: #d4ffd4;
-            border-radius: 6px;
-            margin-bottom: 8px;
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 12px;
+            position: relative;
         }
 
+        .time {
+            font-size: 10px;
+            opacity: 0.8;
+            margin-top: 4px;
+        }
+
+        .deleteBtn {
+            position: absolute;
+            right: 6px;
+            top: 6px;
+            font-size: 10px;
+            background: black;
+            color: white;
+            border: none;
+            padding: 3px;
+            cursor: pointer;
+        }
+
+        #typing { font-size: 12px; color: gray; }
+        
         #sendBox { display: flex; }
         #msgInput { flex: 1; padding: 10px; }
         button { padding: 10px; background:black; color:white; border:none; }
@@ -50,24 +69,24 @@
 
 <body>
 
-<!-- LOGIN -->
 <div id="loginBox">
-    <h2>Enter Access ID</h2>
-    <input id="accessID" type="password" placeholder="Enter ID 5689" style="width:100%;padding:10px;">
-    <button onclick="checkID()" style="width:100%;margin-top:10px;">Enter</button>
+    <h2>Enter Access</h2>
+
+    <input id="accessID" type="password" placeholder="Enter ID 5689" style="width:100%;padding:10px;margin-bottom:10px;">
+
+    <input id="deviceName" type="text" placeholder="Enter device name (Phone / Laptop)" style="width:100%;padding:10px;">
+
+    <button onclick="login()" style="width:100%;margin-top:10px;">Enter</button>
 </div>
 
-<!-- DEVICE NAME -->
-<div id="deviceBox">
-    <h2>Enter Device Name</h2>
-    <input id="deviceNameInput" type="text" placeholder="Example: Phone, Laptop, PC" style="width:100%;padding:10px;">
-    <button onclick="saveDevice()" style="width:100%;margin-top:10px;">Continue</button>
-</div>
-
-<!-- CHAT -->
 <div id="chatBox">
     <h2>Chat</h2>
     <div id="messages"></div>
+    <div id="typing"></div>
+
+    <audio id="notifySound">
+        <source src="https://actions.google.com/sounds/v1/cartoon/wood_plank_flicks.ogg" type="audio/ogg">
+    </audio>
 
     <div id="sendBox">
         <input id="msgInput" type="text" placeholder="Type message">
@@ -77,12 +96,10 @@
 
 <script type="module">
 
-// Firebase v10
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getDatabase, ref, push, onValue, remove }
+import { getDatabase, ref, push, onValue, remove, set }
 from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 
-// Firebase config
 const firebaseConfig = {
     apiKey: "AIzaSyDRQq8I9ebaYGiyYy0LfKXTy5IFDzj8PFE",
     authDomain: "message-d4df0.firebaseapp.com",
@@ -93,34 +110,46 @@ const firebaseConfig = {
     appId: "1:1004865992718:web:cbd37f7bcfce36521c645f"
 };
 
-// Init Firebase
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 const chatRef = ref(db, "chat");
+const typingRef = ref(db, "typing");
 
-let deviceName = "";
+let device = "";
+let bgColor = "";
+let textColor = "";
 
-// LOGIN → DEVICE NAME
-window.checkID = function() {
+// ******************************
+// AUTO COLOR + READABLE TEXT
+// ******************************
+function getColorSet() {
+    const sets = [
+        { bg: "#007bff", text: "white" },   // Blue
+        { bg: "#28a745", text: "black" },   // Green
+        { bg: "#ff9900", text: "black" },   // Orange
+        { bg: "#6f42c1", text: "white" }    // Purple
+    ];
+
+    return sets[Math.floor(Math.random() * sets.length)];
+}
+
+// LOGIN
+window.login = function() {
     let id = document.getElementById("accessID").value;
+    device = document.getElementById("deviceName").value.trim();
+
+    if (!device) return alert("Enter device name!");
+
     if (id === "5689") {
         document.getElementById("loginBox").style.display = "none";
-        document.getElementById("deviceBox").style.display = "block";
+        document.getElementById("chatBox").style.display = "flex";
+
+        let colorSet = getColorSet();
+        bgColor = colorSet.bg;
+        textColor = colorSet.text;
     } else {
         alert("Incorrect ID");
     }
-};
-
-// DEVICE NAME → CHAT
-window.saveDevice = function() {
-    deviceName = document.getElementById("deviceNameInput").value.trim();
-    if (deviceName === "") {
-        alert("Enter a device name");
-        return;
-    }
-
-    document.getElementById("deviceBox").style.display = "none";
-    document.getElementById("chatBox").style.display = "flex";
 };
 
 // SEND MESSAGE
@@ -129,27 +158,29 @@ window.sendMessage = function() {
     if (msg.trim() === "") return;
 
     push(chatRef, {
-        device: deviceName,
         text: msg,
+        device: device,
+        bg: bgColor,
+        textColor: textColor,
         timestamp: Date.now()
     });
 
     document.getElementById("msgInput").value = "";
+    set(typingRef, "");
 };
 
-// DELETE MESSAGES AFTER 24 HOURS
-onValue(chatRef, (snapshot) => {
-    let now = Date.now();
-    let day = 24 * 60 * 60 * 1000;
+// TYPING INDICATOR
+msgInput.oninput = () => {
+    set(typingRef, device + " is typing...");
+    setTimeout(() => set(typingRef, ""), 2000);
+};
 
-    snapshot.forEach((node) => {
-        if (now - node.val().timestamp > day) {
-            remove(ref(db, "chat/" + node.key));
-        }
-    });
+// SHOW TYPING
+onValue(typingRef, (s) => {
+    document.getElementById("typing").innerText = s.val() || "";
 });
 
-// SHOW MESSAGES
+// DISPLAY MESSAGES
 onValue(chatRef, (snapshot) => {
     let box = document.getElementById("messages");
     box.innerHTML = "";
@@ -159,13 +190,39 @@ onValue(chatRef, (snapshot) => {
 
         let msg = document.createElement("div");
         msg.className = "msg";
+        msg.style.background = data.bg;
+        msg.style.color = data.textColor;
 
-        msg.innerHTML = `<b>${data.device}:</b> ${data.text}`;
+        msg.innerHTML = `
+            <b>${data.device}</b><br>
+            ${data.text}
+            <div class="time">${new Date(data.timestamp).toLocaleTimeString()}</div>
+            <button class="deleteBtn" onclick="deleteMsg('${node.key}')">X</button>
+        `;
 
         box.appendChild(msg);
     });
 
     box.scrollTop = box.scrollHeight;
+
+    document.getElementById("notifySound").play();
+});
+
+// DELETE MESSAGE
+window.deleteMsg = function(key) {
+    remove(ref(db, "chat/" + key));
+};
+
+// AUTO DELETE AFTER 24 HOURS
+onValue(chatRef, (snapshot) => {
+    let now = Date.now();
+    let day = 24 * 60 * 60 * 1000;
+
+    snapshot.forEach((node) => {
+        if (now - node.val().timestamp > day) {
+            remove(ref(db, "chat/" + node.key));
+        }
+    });
 });
 
 </script>
