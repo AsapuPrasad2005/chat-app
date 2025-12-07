@@ -1,249 +1,185 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>One-to-One Online Chat (Firebase)</title>
-<style>
-  :root{
-    --accent:#2f9d58;
-    --bg:#f1f3f4;
-    --card:#ffffff;
-  }
-  body{margin:0;font-family:Inter,Arial,Helvetica,sans-serif;background:var(--bg);height:100vh;display:flex;align-items:center;justify-content:center}
-  /* Login */
-  #loginScreen{width:100%;height:100vh;display:flex;align-items:center;justify-content:center;background:#111}
-  .login-box{background:#1f1f1f;color:#fff;padding:28px;border-radius:12px;width:360px;box-shadow:0 8px 30px rgba(0,0,0,.4);text-align:center}
-  .login-box h2{margin:0 0 12px}
-  .login-box input{width:100%;padding:12px;margin:10px 0;border-radius:8px;border:none;outline:none;font-size:16px}
-  .login-box button{width:100%;padding:12px;border-radius:8px;border:none;background:var(--accent);color:#fff;font-weight:600;cursor:pointer}
-  .err{color:#ff6b6b;margin-top:8px;display:none}
+    <title>Secure Chat App</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
 
-  /* Chat */
-  #chatScreen{display:none;flex-direction:column;height:100vh;width:100%;max-width:960px;margin:auto;background:transparent}
-  #chatHeader{background:var(--accent);color:#fff;padding:14px 18px;font-weight:700;border-radius:12px 12px 0 0;text-align:center}
-  #messages{flex:1;background:linear-gradient(180deg,#e9eef1, #f6f8f9);padding:18px;overflow:auto}
-  .msg{display:block;max-width:70%;padding:10px 14px;border-radius:14px;margin:8px 0;word-break:break-word;box-shadow:0 2px 6px rgba(0,0,0,.06)}
-  .me{margin-left:auto;background:var(--accent);color:#fff;border-bottom-right-radius:2px}
-  .other{margin-right:auto;background:var(--card);color:#111;border:1px solid rgba(0,0,0,.06);border-bottom-left-radius:2px}
-  .meta{font-size:11px;opacity:.7;margin-top:6px}
-  #inputBox{display:flex;padding:12px;background:var(--card);border-radius:0 0 12px 12px;gap:8px;align-items:center}
-  #msgText{flex:1;padding:10px;border-radius:10px;border:1px solid #ddd;outline:none;font-size:15px}
-  #sendBtn{padding:10px 16px;border-radius:10px;border:none;background:var(--accent);color:#fff;cursor:pointer;font-weight:600}
-  #status{font-size:12px;color:#6b7280;margin-left:12px}
-  /* small screens adjustments */
-  @media (max-width:420px){
-    .login-box{width:92%}
-    #chatScreen{width:100%}
-    #messages{padding:12px}
-  }
-</style>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f1f1f1;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        #loginBox, #chatBox {
+            width: 90%;
+            max-width: 400px;
+            background: white;
+            padding: 20px;
+            box-shadow: 0px 0px 10px #aaa;
+            border-radius: 10px;
+        }
+
+        #chatBox {
+            display: none;
+            height: 80vh;
+            flex-direction: column;
+        }
+
+        #messages {
+            flex: 1;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            padding: 10px;
+            margin-bottom: 10px;
+            background: #fafafa;
+        }
+
+        .msg {
+            background: #d1ffd1;
+            padding: 8px;
+            border-radius: 6px;
+            margin-bottom: 6px;
+            max-width: 80%;
+            word-wrap: break-word;
+        }
+
+        #sendBox {
+            display: flex;
+        }
+
+        #msgInput {
+            flex: 1;
+            padding: 10px;
+        }
+
+        button {
+            padding: 10px;
+            background: black;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+    </style>
 </head>
 <body>
 
-<!-- LOGIN SCREEN -->
-<div id="loginScreen">
-  <div class="login-box" role="dialog" aria-labelledby="loginTitle">
-    <h2 id="loginTitle">Enter ID to unlock chat</h2>
-    <input id="loginId" type="password" placeholder="Enter ID (example: 5689)" autocomplete="off" />
-    <button id="unlockBtn">Unlock</button>
-    <div class="err" id="loginErr">Incorrect ID — try again.</div>
-    <p style="font-size:12px;margin-top:12px;color:#bbb">Messages persist for 24 hours and sync across devices.</p>
-  </div>
+<div id="loginBox">
+    <h2>Enter Access ID</h2>
+    <input id="accessID" type="password" placeholder="Enter ID 5689" style="width:100%;padding:10px;">
+    <button onclick="checkID()" style="width:100%;margin-top:10px;">Enter</button>
 </div>
 
-<!-- CHAT SCREEN -->
-<div id="chatScreen" aria-live="polite" style="display:none;flex-direction:column;max-width:960px;width:96%;">
-  <div id="chatHeader">One-to-One Chat</div>
-  <div id="messages" role="log" aria-atomic="false"></div>
+<div id="chatBox">
+    <h2>Chat</h2>
+    <div id="messages"></div>
 
-  <div id="inputBox">
-    <input id="msgText" type="text" placeholder="Type a message..." />
-    <button id="sendBtn">Send</button>
-    <div id="status">Not connected</div>
-  </div>
+    <div id="sendBox">
+        <input id="msgInput" type="text" placeholder="Type a message">
+        <button onclick="sendMessage()">Send</button>
+    </div>
 </div>
 
-<!-- Firebase compat (works simpler for this file) -->
-<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
+<script type="module">
 
-<script>
-/* ================== REPLACE / VERIFY THIS VALUE ==================
-   I used the likely Realtime DB URL for your project:
-   https://message-d4df0-default-rtdb.firebaseio.com
-   If your Realtime Database URL is different, replace it below.
-   You can find it in Firebase Console → Build → Realtime Database (the URL at top).
-===================================================================*/
-const firebaseConfig = {
-  apiKey: "AIzaSyDRQq8I9ebaYGiyYy0LfKXTy5IFDzj8PFE",
-  authDomain: "message-d4df0.firebaseapp.com",
-  databaseURL: "https://message-d4df0-default-rtdb.firebaseio.com", /* ← IMPORTANT: change if yours differs */
-  projectId: "message-d4df0",
-  storageBucket: "message-d4df0.firebasestorage.app",
-  messagingSenderId: "1004865992718",
-  appId: "1:1004865992718:web:cbd37f7bcfce36521c645f",
-  measurementId: "G-1GNPC531Z0"
-};
+    // Firebase import
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+    import { getDatabase, ref, push, onValue, set, remove } 
+        from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 
-/* Initialize Firebase (compat) */
-firebase.initializeApp(firebaseConfig);
-const db = firebase.database();
+    // Your Firebase config
+    const firebaseConfig = {
+        apiKey: "AIzaSyDRQq8I9ebaYGiyYy0LfKXTy5IFDzj8PFE",
+        authDomain: "message-d4df0.firebaseapp.com",
+        databaseURL: "https://message-d4df0-default-rtdb.asia-southeast1.firebasedatabase.app/",
+        projectId: "message-d4df0",
+        storageBucket: "message-d4df0.firebasestorage.app",
+        messagingSenderId: "1004865992718",
+        appId: "1:1004865992718:web:cbd37f7bcfce36521c645f"
+    };
 
-/* ---------- App logic ---------- */
-const LOGIN_ID = "5689";
-const MS_24H = 24 * 60 * 60 * 1000;
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+    const chatRef = ref(db, "chat");
 
-const loginScreen = document.getElementById('loginScreen');
-const chatScreen = document.getElementById('chatScreen');
-const unlockBtn = document.getElementById('unlockBtn');
-const loginErr = document.getElementById('loginErr');
-const loginIdInput = document.getElementById('loginId');
-
-const messagesEl = document.getElementById('messages');
-const msgText = document.getElementById('msgText');
-const sendBtn = document.getElementById('sendBtn');
-const statusEl = document.getElementById('status');
-
-/* device user id (keeps track of 'me') */
-let userId = localStorage.getItem('chat_user_id');
-if (!userId) {
-  userId = 'u_' + Math.random().toString(36).slice(2,10);
-  localStorage.setItem('chat_user_id', userId);
-}
-
-/* store a local flag so we don't attach listener until unlocked */
-let attached = false;
-
-/* Unlock button */
-unlockBtn.addEventListener('click', tryUnlock);
-loginIdInput.addEventListener('keydown', (e)=>{ if(e.key==='Enter') tryUnlock() });
-
-function tryUnlock(){
-  const v = loginIdInput.value.trim();
-  if (v === LOGIN_ID) {
-    loginScreen.style.display = 'none';
-    chatScreen.style.display = 'flex';
-    loginErr.style.display = 'none';
-    attachRealtime();
-    cleanupOldMessages(); // remove old ones on entry
-  } else {
-    loginErr.style.display = 'block';
-  }
-}
-
-/* Send message */
-sendBtn.addEventListener('click', sendMessage);
-msgText.addEventListener('keydown', (e)=>{ if(e.key==='Enter') sendMessage(); });
-
-function sendMessage(){
-  const text = msgText.value.trim();
-  if (!text) return;
-  const payload = {
-    text,
-    sender: userId,
-    ts: Date.now()
-  };
-  // push into "messages"
-  db.ref('messages').push(payload)
-    .then(()=> {
-      msgText.value = '';
-    })
-    .catch(err=>{
-      console.error('send error', err);
-      alert('Failed to send message. Check console.');
-    });
-}
-
-/* Real-time listening */
-function attachRealtime(){
-  if (attached) return;
-  attached = true;
-
-  // Update connection status using .info/connected
-  const connectedRef = db.ref('.info/connected');
-  connectedRef.on('value', snap=>{
-    const val = snap.val();
-    statusEl.textContent = val ? 'Connected' : 'Offline';
-  });
-
-  // Listen for new messages
-  const msgsRef = db.ref('messages');
-  msgsRef.on('child_added', snap=>{
-    const data = snap.val();
-    if (!data) return;
-    renderMessage(snap.key, data);
-    // Clean immediately if old (in case child_added yields old message)
-    if (Date.now() - data.ts > MS_24H) {
-      db.ref('messages/' + snap.key).remove().catch(()=>{});
+    // ---------------------------
+    // LOGIN CHECK
+    // ---------------------------
+    function checkID() {
+        let id = document.getElementById("accessID").value;
+        if (id === "5689") {
+            document.getElementById("loginBox").style.display = "none";
+            document.getElementById("chatBox").style.display = "flex";
+        } else {
+            alert("Incorrect ID");
+        }
     }
-  });
+    window.checkID = checkID;
 
-  // Also listen for removed items to remove from UI
-  msgsRef.on('child_removed', snap=>{
-    const key = snap.key;
-    const el = document.querySelector(`[data-key="${key}"]`);
-    if (el) el.remove();
-  });
-}
+    // ---------------------------
+    // SEND MESSAGE
+    // ---------------------------
+    function sendMessage() {
+        const text = document.getElementById("msgInput").value;
+        if (text.trim() === "") return;
 
-/* Render a single message */
-function renderMessage(key, data){
-  // Avoid duplicates
-  if (document.querySelector(`[data-key="${key}"]`)) return;
+        const now = Date.now();
 
-  const el = document.createElement('div');
-  el.className = 'msg ' + (data.sender === userId ? 'me' : 'other');
-  el.setAttribute('data-key', key);
+        push(chatRef, {
+            text: text,
+            timestamp: now
+        });
 
-  const textNode = document.createElement('div');
-  textNode.textContent = data.text;
-  el.appendChild(textNode);
-
-  const meta = document.createElement('div');
-  meta.className = 'meta';
-  const time = new Date(data.ts || Date.now());
-  meta.textContent = (data.sender === userId ? 'You' : 'Other') + ' • ' + time.toLocaleString();
-  el.appendChild(meta);
-
-  messagesEl.appendChild(el);
-  // keep scroll bottom
-  messagesEl.scrollTop = messagesEl.scrollHeight;
-}
-
-/* Remove messages older than 24 hours (one-time cleanup). Also run every hour to keep DB tidy. */
-function cleanupOldMessages(){
-  const cutoff = Date.now() - MS_24H;
-  const msgsRef = db.ref('messages').orderByChild('ts').endAt(cutoff);
-  msgsRef.once('value', snap=>{
-    const toDelete = snap.val();
-    if (!toDelete) return;
-    Object.keys(toDelete).forEach(key=>{
-      db.ref('messages/' + key).remove().catch(()=>{});
-    });
-  });
-}
-// run hourly
-setInterval(cleanupOldMessages, 60*60*1000);
-
-/* Safety: if someone tries to open chat without unlocking (by UI tweak), hide send */
-(function checkVisibility(){
-  const observer = new MutationObserver(()=> {
-    if (chatScreen.style.display !== 'flex') {
-      msgText.disabled = true;
-      sendBtn.disabled = true;
-    } else {
-      msgText.disabled = false;
-      sendBtn.disabled = false;
+        document.getElementById("msgInput").value = "";
     }
-  });
-  observer.observe(document.body, {attributes:true, childList:true, subtree:true});
-})();
+    window.sendMessage = sendMessage;
 
-/* Helpful: when page loads, if user previously unlocked in same tab, show chat */
-window.addEventListener('load', ()=> {
-  // no auto-unlock for security — must enter ID each time
-});
+    // ---------------------------
+    // AUTO DELETE OLD MESSAGES (24 hours)
+    // ---------------------------
+    async function cleanupOldMessages() {
+        onValue(chatRef, (snapshot) => {
+            const data = snapshot.val();
+            const now = Date.now();
+            const HOURS24 = 24 * 60 * 60 * 1000;
+
+            if (!data) return;
+
+            Object.keys(data).forEach(key => {
+                if (now - data[key].timestamp > HOURS24) {
+                    remove(ref(db, "chat/" + key));
+                }
+            });
+        });
+    }
+    cleanupOldMessages();
+
+    // ---------------------------
+    // DISPLAY MESSAGES
+    // ---------------------------
+    onValue(chatRef, (snapshot) => {
+        const msgBox = document.getElementById("messages");
+        msgBox.innerHTML = "";
+
+        const data = snapshot.val();
+        if (!data) return;
+
+        Object.values(data).forEach(msg => {
+            const div = document.createElement("div");
+            div.className = "msg";
+            div.textContent = msg.text;
+            msgBox.appendChild(div);
+        });
+
+        msgBox.scrollTop = msgBox.scrollHeight;
+    });
+
 </script>
+
 </body>
 </html>
