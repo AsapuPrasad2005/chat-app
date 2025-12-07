@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>One-to-One Chat</title>
+
+<style>
+    body {
+        margin: 0;
+        font-family: Arial, sans-serif;
+        background: #f0f2f5;
+    }
+
+    /* ---------- LOGIN SCREEN ---------- */
+    #loginScreen {
+        height: 100vh;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        background: #1e1e1e;
+        color: white;
+    }
+
+    .login-box {
+        background: #2b2b2b;
+        padding: 25px;
+        width: 320px;
+        text-align: center;
+        border-radius: 10px;
+        box-shadow: 0 0 10px #000;
+    }
+
+    .login-box input {
+        width: 90%;
+        padding: 10px;
+        margin-top: 10px;
+        border-radius: 5px;
+        border: none;
+        outline: none;
+    }
+
+    .login-box button {
+        width: 100%;
+        margin-top: 15px;
+        padding: 10px;
+        background: #4CAF50;
+        border: none;
+        color: white;
+        border-radius: 5px;
+        cursor: pointer;
+    }
+
+    #errorMsg {
+        color: #ff4a4a;
+        margin-top: 10px;
+        display: none;
+    }
+
+    /* ---------- CHAT SCREEN ---------- */
+    #chatScreen {
+        display: none;
+        height: 100vh;
+        flex-direction: column;
+    }
+
+    #chatHeader {
+        background: #4CAF50;
+        padding: 15px;
+        color: white;
+        text-align: center;
+        font-size: 20px;
+    }
+
+    #messages {
+        flex: 1;
+        background: #ddd;
+        padding: 10px;
+        overflow-y: auto;
+    }
+
+    .msg {
+        max-width: 60%;
+        padding: 10px;
+        margin: 8px 0;
+        border-radius: 10px;
+        clear: both;
+    }
+
+    .me {
+        background: #4CAF50;
+        color: white;
+        float: right;
+    }
+
+    .other {
+        background: white;
+        border: 1px solid #ccc;
+        float: left;
+    }
+
+    #inputBox {
+        display: flex;
+        background: #fff;
+        padding: 10px;
+    }
+
+    #inputBox input {
+        flex: 1;
+        padding: 10px;
+        border-radius: 5px;
+        border: 1px solid #ccc;
+        outline: none;
+    }
+
+    #inputBox button {
+        margin-left: 10px;
+        padding: 10px 20px;
+        background: #4CAF50;
+        color: #fff;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+    }
+
+</style>
+</head>
+<body>
+
+<!-- -------------------------------- LOGIN SCREEN ------------------------------- -->
+<div id="loginScreen">
+    <div class="login-box">
+        <h2>Enter Login ID</h2>
+        <input type="password" id="loginId" placeholder="Enter ID">
+        <button onclick="checkLogin()">Unlock Chat</button>
+        <p id="errorMsg">❌ Incorrect ID! Try again.</p>
+    </div>
+</div>
+
+<!-- -------------------------------- CHAT SCREEN ------------------------------- -->
+<div id="chatScreen">
+    <div id="chatHeader">One-to-One Chat</div>
+
+    <div id="messages"></div>
+
+    <div id="inputBox">
+        <input type="text" id="msgText" placeholder="Type message...">
+        <button onclick="sendMessage()">Send</button>
+    </div>
+</div>
+
+<script>
+    // ----------- LOGIN FUNCTION ----------- //
+    function checkLogin() {
+        let enteredId = document.getElementById("loginId").value;
+
+        if (enteredId === "5689") {
+            // Hide login screen
+            document.getElementById("loginScreen").style.display = "none";
+
+            // Show chat screen
+            document.getElementById("chatScreen").style.display = "flex";
+        } else {
+            document.getElementById("errorMsg").style.display = "block";
+        }
+    }
+
+    // ----------- SEND MESSAGE FUNCTION ----------- //
+    function sendMessage() {
+        let text = document.getElementById("msgText").value;
+        if (text.trim() === "") return;
+
+        let newMsg = document.createElement("div");
+        newMsg.className = "msg me";
+        newMsg.textContent = text;
+
+        document.getElementById("messages").appendChild(newMsg);
+        document.getElementById("msgText").value = "";
+        document.getElementById("messages").scrollTop = messages.scrollHeight;
+    }
+</script>
+
+</body>
+</html>
