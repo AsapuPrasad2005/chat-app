@@ -15,7 +15,7 @@
             align-items: center;
         }
 
-        #loginBox, #chatBox {
+        #loginBox, #deviceBox, #chatBox {
             width: 90%;
             max-width: 400px;
             background: white;
@@ -25,6 +25,7 @@
         }
 
         #chatBox { display: none; height: 80vh; flex-direction: column; }
+        #deviceBox { display: none; }
 
         #messages {
             flex: 1;
@@ -49,12 +50,21 @@
 
 <body>
 
+<!-- LOGIN -->
 <div id="loginBox">
     <h2>Enter Access ID</h2>
     <input id="accessID" type="password" placeholder="Enter ID 5689" style="width:100%;padding:10px;">
     <button onclick="checkID()" style="width:100%;margin-top:10px;">Enter</button>
 </div>
 
+<!-- DEVICE NAME -->
+<div id="deviceBox">
+    <h2>Enter Device Name</h2>
+    <input id="deviceNameInput" type="text" placeholder="Example: Phone, Laptop, PC" style="width:100%;padding:10px;">
+    <button onclick="saveDevice()" style="width:100%;margin-top:10px;">Continue</button>
+</div>
+
+<!-- CHAT -->
 <div id="chatBox">
     <h2>Chat</h2>
     <div id="messages"></div>
@@ -72,7 +82,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/fireba
 import { getDatabase, ref, push, onValue, remove }
 from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 
-// Your Firebase config (corrected)
+// Firebase config
 const firebaseConfig = {
     apiKey: "AIzaSyDRQq8I9ebaYGiyYy0LfKXTy5IFDzj8PFE",
     authDomain: "message-d4df0.firebaseapp.com",
@@ -83,28 +93,43 @@ const firebaseConfig = {
     appId: "1:1004865992718:web:cbd37f7bcfce36521c645f"
 };
 
-// Init
+// Init Firebase
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 const chatRef = ref(db, "chat");
 
-// Login
+let deviceName = "";
+
+// LOGIN → DEVICE NAME
 window.checkID = function() {
     let id = document.getElementById("accessID").value;
     if (id === "5689") {
         document.getElementById("loginBox").style.display = "none";
-        document.getElementById("chatBox").style.display = "flex";
+        document.getElementById("deviceBox").style.display = "block";
     } else {
         alert("Incorrect ID");
     }
 };
 
-// Send message
+// DEVICE NAME → CHAT
+window.saveDevice = function() {
+    deviceName = document.getElementById("deviceNameInput").value.trim();
+    if (deviceName === "") {
+        alert("Enter a device name");
+        return;
+    }
+
+    document.getElementById("deviceBox").style.display = "none";
+    document.getElementById("chatBox").style.display = "flex";
+};
+
+// SEND MESSAGE
 window.sendMessage = function() {
     let msg = document.getElementById("msgInput").value;
     if (msg.trim() === "") return;
 
     push(chatRef, {
+        device: deviceName,
         text: msg,
         timestamp: Date.now()
     });
@@ -112,7 +137,7 @@ window.sendMessage = function() {
     document.getElementById("msgInput").value = "";
 };
 
-// Auto delete 24 hours
+// DELETE MESSAGES AFTER 24 HOURS
 onValue(chatRef, (snapshot) => {
     let now = Date.now();
     let day = 24 * 60 * 60 * 1000;
@@ -124,15 +149,19 @@ onValue(chatRef, (snapshot) => {
     });
 });
 
-// Show messages
+// SHOW MESSAGES
 onValue(chatRef, (snapshot) => {
     let box = document.getElementById("messages");
     box.innerHTML = "";
 
     snapshot.forEach((node) => {
+        let data = node.val();
+
         let msg = document.createElement("div");
         msg.className = "msg";
-        msg.textContent = node.val().text;
+
+        msg.innerHTML = `<b>${data.device}:</b> ${data.text}`;
+
         box.appendChild(msg);
     });
 
