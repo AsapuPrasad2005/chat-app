@@ -8,16 +8,32 @@
 <style>
 /* ====== Base / WhatsApp-ish iPhone style ====== */
 :root{
-  --bg:#f6f8fb; --card:#ffffff; --muted:#9aa4b2; --accent:#25d366;
-  --bubble-me:#dcf8c6; --bubble-other:#ffffff;
+  --bg:#f6f8fb;
+  --card:#ffffff;
+  --muted:#6b7580;
+  --accent:#25d366;
+  --bubble-me:#dcf8c6;
+  --bubble-other:#ffffff;
   --sidebar-w:320px;
   --anim-fast:220ms;
+  --text:#0b1220;
+  --border: rgba(0,0,0,0.06);
+  --overlay-bg: rgba(0,0,0,0.38);
 }
 [data-theme="dark"]{
-  --bg:#041018; --card:#062027; --muted:#92a6b3; --accent:#25d366;
-  --bubble-me:#154d2b; --bubble-other:#08333a;
+  --bg:#041018;
+  --card:#062027;
+  --muted:#9bb0bf;
+  --accent:#25d366;
+  --bubble-me:#154d2b;
+  --bubble-other:#08333a;
+  --text:#e6f2f8;
+  --border: rgba(255,255,255,0.06);
+  --overlay-bg: rgba(0,0,0,0.55);
   color-scheme: dark;
 }
+
+/* Reset & base */
 *{box-sizing:border-box}
 html,body{height:100%}
 body{
@@ -29,6 +45,7 @@ body{
   align-items:center;
   justify-content:center;
   -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale;
+  color:var(--text);
 }
 
 /* App container - full width on desktop */
@@ -50,11 +67,12 @@ body{
   min-width:var(--sidebar-w);
   display:flex;
   flex-direction:column;
-  border-right:1px solid rgba(0,0,0,0.06);
+  border-right:1px solid var(--border);
   background:linear-gradient(180deg, rgba(255,255,255,0.02), transparent);
   transform:translateX(0);
   transition:transform var(--anim-fast) ease, box-shadow var(--anim-fast) ease;
   z-index:20;
+  background-color: transparent;
 }
 
 /* When hidden on mobile */
@@ -63,19 +81,20 @@ body{
 /* header */
 .header{
   height:72px; display:flex; align-items:center; justify-content:space-between;
-  padding:12px 14px; border-bottom:1px solid rgba(0,0,0,0.04);
+  padding:12px 14px; border-bottom:1px solid var(--border);
+  background:linear-gradient(180deg, rgba(0,0,0,0.01), transparent);
 }
 .brand{display:flex;align-items:center;gap:12px}
 .brand .logo{width:46px;height:46px;border-radius:12px;background:var(--accent);display:flex;align-items:center;justify-content:center;color:white;font-weight:700}
 .header .actions{display:flex;gap:8px;align-items:center}
-.iconBtn{background:transparent;border:none;padding:8px;border-radius:10px;cursor:pointer;font-size:18px}
+.iconBtn{background:transparent;border:none;padding:8px;border-radius:10px;cursor:pointer;font-size:18px;color:var(--text)}
 
 /* Search and create */
 .controls{padding:12px}
 .searchBox{display:flex;gap:8px;align-items:center}
-.searchBox input{flex:1;padding:10px;border-radius:999px;border:1px solid rgba(0,0,0,0.06);background:transparent}
+.searchBox input{flex:1;padding:10px;border-radius:999px;border:1px solid var(--border);background:transparent;color:var(--text)}
 .createRow{display:flex;gap:8px;margin-top:10px}
-.createRow input{flex:1;padding:10px;border-radius:10px;border:1px solid rgba(0,0,0,0.06)}
+.createRow input{flex:1;padding:10px;border-radius:10px;border:1px solid var(--border);background:transparent;color:var(--text)}
 .small{font-size:12px;color:var(--muted)}
 
 /* Room list */
@@ -84,7 +103,7 @@ body{
 .roomItem:hover{filter:brightness(.99)}
 .roomAvatar{width:44px;height:44px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700}
 .roomMeta{flex:1;display:flex;flex-direction:column}
-.roomTitle{font-weight:600}
+.roomTitle{font-weight:600;color:var(--text)}
 .roomSub{font-size:12px;color:var(--muted)}
 
 /* Chat panel */
@@ -95,17 +114,17 @@ body{
 
 /* chat header */
 .chatHeader{
-  height:72px;padding:10px 14px;border-bottom:1px solid rgba(0,0,0,0.04);
+  height:72px;padding:10px 14px;border-bottom:1px solid var(--border);
   display:flex;align-items:center;justify-content:space-between;
 }
 .chatHeader .left{display:flex;gap:12px;align-items:center}
 .chatHeader .avatar{width:46px;height:46px;border-radius:12px;background:#e6eef6;display:flex;align-items:center;justify-content:center}
 .chatHeader .info{display:flex;flex-direction:column;min-width:0}
-.chatHeader .title{font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.chatHeader .title{font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--text)}
 .chatHeader .status{font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 
 /* Back button - mobile only */
-.backBtn{display:none;margin-right:6px;padding:8px;border-radius:8px;border:none;background:transparent;cursor:pointer}
+.backBtn{display:none;margin-right:6px;padding:8px;border-radius:8px;border:none;background:transparent;cursor:pointer;color:var(--text)}
 
 /* messages */
 .messages{flex:1; padding:12px; overflow:auto; background:linear-gradient(180deg, rgba(0,0,0,0.01), transparent)}
@@ -113,6 +132,7 @@ body{
 .msgRow.me{justify-content:flex-end}
 .bubble{
   display:inline-block; max-width:78%; padding:10px 12px; border-radius:18px; position:relative; margin:6px 0; word-break:break-word; box-shadow:0 2px 6px rgba(0,0,0,0.04);
+  color:var(--text); /* default; may be overridden per-bubble */
 }
 .bubble .sender{font-weight:700;font-size:12px;margin-bottom:6px}
 .bubble .text{white-space:pre-wrap}
@@ -120,11 +140,11 @@ body{
 .bubble.me{background:var(--bubble-me)}
 .bubble.other{background:var(--bubble-other)}
 .bubble .actions{position:absolute; top:6px; right:8px; display:flex; gap:6px}
-.smallIcon{font-size:12px; padding:6px; border-radius:6px; cursor:pointer; opacity:.8}
+.smallIcon{font-size:12px; padding:6px; border-radius:6px; cursor:pointer; opacity:.8;background:transparent;border:none}
 
 /* composer */
-.composer{display:flex;padding:10px;border-top:1px solid rgba(0,0,0,0.04);gap:8px;align-items:center}
-.composer input{flex:1;padding:12px;border-radius:999px;border:1px solid rgba(0,0,0,0.06);background:transparent}
+.composer{display:flex;padding:10px;border-top:1px solid var(--border);gap:8px;align-items:center}
+.composer input{flex:1;padding:12px;border-radius:999px;border:1px solid var(--border);background:transparent;color:var(--text)}
 .composer .sendBtn{background:var(--accent);color:white;padding:10px 12px;border-radius:999px;border:none;cursor:pointer}
 
 /* small helpers */
@@ -132,16 +152,19 @@ body{
 .topRightControls{display:flex;gap:8px;align-items:center}
 
 /* overlays / panels */
-.overlay{position:fixed;inset:0;background:rgba(0,0,0,0.4);display:none;align-items:center;justify-content:center;z-index:40}
+.overlay{position:fixed;inset:0;background:var(--overlay-bg);display:none;align-items:center;justify-content:center;z-index:40}
 .panel{background:var(--card);padding:18px;border-radius:10px;width:90%;max-width:420px}
 .field{margin-top:10px}
 
 /* Welcome full-screen (option B) */
 #welcome {
   position:absolute; inset:0; z-index:60;
-  display:flex; align-items:center; justify-content:center;
-  background:linear-gradient(180deg, rgba(0,0,0,0.38), rgba(0,0,0,0.22));
+  display:none; align-items:center; justify-content:center;
   transition:opacity var(--anim-fast) ease, visibility var(--anim-fast);
+}
+#welcome.active{
+  display:flex;
+  background:linear-gradient(180deg, rgba(0,0,0,0.38), rgba(0,0,0,0.22));
 }
 #welcome .box{
   width:100%; max-width:520px; background:var(--card); border-radius:12px; padding:28px; text-align:center;
@@ -150,7 +173,7 @@ body{
 }
 #welcome h1{margin:0 0 12px;font-size:24px}
 #welcome p{margin:0 0 18px;color:var(--muted)}
-#welcome .nameInput{width:100%; padding:12px;border-radius:10px;border:1px solid rgba(0,0,0,0.08); margin-bottom:12px}
+#welcome .nameInput{width:100%; padding:12px;border-radius:10px;border:1px solid var(--border); margin-bottom:12px;background:transparent;color:var(--text)}
 #welcome .startBtn{background:var(--accent); color:white; padding:12px 18px; border-radius:10px; border:none; cursor:pointer}
 
 /* Animations: hide */
@@ -159,15 +182,12 @@ body{
 /* mobile responsive */
 @media (max-width:900px){
   .app{border-radius:0}
-  /* hide sidebar by default on small screens; show toggle */
   .sidebar{position:absolute;left:0;top:0;bottom:0;height:100%;box-shadow:0 20px 40px rgba(0,0,0,0.12)}
   .sidebar.hidden{transform:translateX(-110%);}
   .chat{flex:1; margin-left:0}
   .brand .logo{width:40px;height:40px}
   .backBtn{display:inline-flex}
   .header .actions{gap:6px}
-  /* when the page loads on mobile, we want to show room list first.
-     A CSS helper will let JS toggle visibility (class 'show-chat') */
   .chat.hidden { display:none; }
 }
 
@@ -177,13 +197,16 @@ body{
   .searchBox input{padding:8px}
   .createRow input{padding:8px}
 }
+
+/* helper for accessibility */
+.visually-hidden{position:absolute!important;height:1px;width:1px;overflow:hidden;clip:rect(1px,1px,1px,1px);white-space:nowrap}
 </style>
 </head>
 <body data-theme="light">
-<div class="app" role="application" aria-label="WhatsApp style chat">
+<div class="app" role="application" aria-label="WhatsApp style chat" id="appRoot">
 
   <!-- LEFT: header + controls + room list -->
-  <div class="sidebar" id="sidebar">
+  <div class="sidebar" id="sidebar" aria-hidden="false">
     <div class="header">
       <div class="brand">
         <div class="logo">WA</div>
@@ -196,18 +219,18 @@ body{
 
     <div class="controls">
       <div class="searchBox">
-        <input id="searchRoomInput" placeholder="Search rooms or messages...">
-        <button id="searchBtn" class="iconBtn">🔎</button>
+        <input id="searchRoomInput" placeholder="Search rooms or messages..." aria-label="Search rooms or messages">
+        <button id="searchBtn" class="iconBtn" aria-label="Search">🔎</button>
       </div>
 
       <div class="createRow">
-        <input id="createRoomId" placeholder="New room id">
+        <input id="createRoomId" placeholder="New room id" aria-label="New room id">
         <button id="createRoomBtn">Create</button>
       </div>
 
       <div class="createRow" style="margin-top:8px">
-        <input id="createRoomPass" placeholder="Room password (optional)">
-        <input id="createAdminPass" placeholder="Admin password (optional)">
+        <input id="createRoomPass" placeholder="Room password (optional)" aria-label="Room password (optional)">
+        <input id="createAdminPass" placeholder="Admin password (optional)" aria-label="Admin password (optional)">
       </div>
 
       <div class="small" style="margin-top:8px">Enter your device name on first join</div>
@@ -217,7 +240,7 @@ body{
   </div>
 
   <!-- RIGHT: chat panel -->
-  <div class="chat hidden" id="chatPanel">
+  <div class="chat hidden" id="chatPanel" aria-hidden="true">
     <div class="chatHeader">
       <div class="left">
         <button id="backBtn" class="backBtn" title="Back">←</button>
@@ -236,15 +259,15 @@ body{
       </div>
     </div>
 
-    <div class="onlineList" id="onlineList" aria-live="polite"></div>
+    <div class="onlineList" id="onlineList" aria-live="polite" style="padding:8px;display:flex;flex-direction:column;gap:6px"></div>
 
     <div id="messages" class="messages" role="log" aria-atomic="false"></div>
 
     <div id="typingLine" class="small" style="padding:6px 12px;color:var(--muted)"></div>
 
     <div class="composer">
-      <input id="messageInput" placeholder="Message">
-      <input id="colorPicker" placeholder="#aabbcc" style="width:110px">
+      <input id="messageInput" placeholder="Message" aria-label="Message">
+      <input id="colorPicker" placeholder="#aabbcc" style="width:110px" aria-label="Message color (#hex)">
       <button class="sendBtn" id="sendBtn">Send</button>
     </div>
   </div>
@@ -272,7 +295,7 @@ body{
 /* ========= FIREBASE IMPORTS ========= */
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-app.js";
 import {
-  getDatabase, ref, set, push, onValue, remove, get, update
+  getDatabase, ref, set, push, onValue, remove, get, update, onDisconnect
 } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-database.js";
 
 /* ===== REPLACE with your Firebase config if needed ===== */
@@ -325,35 +348,50 @@ if(!deviceId){ deviceId = 'u_' + Math.random().toString(36).slice(2,9); localSto
 let deviceName = localStorage.getItem('wa_device_name') || '';
 let deviceColor = localStorage.getItem('wa_device_color') || '';
 
+const messageKeysAdded = [];
+const pendingDisconnects = new Set();
+
+/* Helpers */
 function saveLocalIdentity(name,color){
   if(name){ deviceName = name; localStorage.setItem('wa_device_name', name); }
   if(color){ deviceColor = color; localStorage.setItem('wa_device_color', color); }
 }
-function ensureIdentity(){
-  if(!deviceName) return false;
-  if(!deviceColor){
-    deviceColor = deterministicColor(deviceName || deviceId);
-    localStorage.setItem('wa_device_color', deviceColor);
-  }
-  return true;
-}
+function ensureIdentity(){ if(!deviceName) return false; if(!deviceColor){ deviceColor = deterministicColor(deviceName || deviceId); localStorage.setItem('wa_device_color', deviceColor);} return true; }
 function deterministicColor(s){
   const palette = ["#2b7cff","#2fc27f","#ffb84d","#9863ff","#ff6b6b","#06b6d4","#f97316","#7c3aed"];
   if(!s) return palette[0];
   let h=0; for(let i=0;i<s.length;i++) h=(h<<5)-h + s.charCodeAt(i);
   return palette[Math.abs(h) % palette.length];
 }
-
 /* simple sanitize */
-function esc(s){ if(!s) return ''; return s.toString().replace(/[&<>"']/g, m=> ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
+function esc(s){ if(s===undefined || s===null) return ''; return s.toString().replace(/[&<>"']/g, m=> ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
+
+/* Contrast helper: return '#000' or '#fff' for readable text over given hex */
+function contrastColorForHex(hex){
+  if(!hex) return '#000';
+  hex = hex.replace('#','').trim();
+  if(hex.length === 3) hex = hex.split('').map(c=>c+c).join('');
+  const r = parseInt(hex.slice(0,2),16);
+  const g = parseInt(hex.slice(2,4),16);
+  const b = parseInt(hex.slice(4,6),16);
+  // relative luminance
+  const lum = (0.2126*srgb(r) + 0.7152*srgb(g) + 0.0722*srgb(b));
+  return lum > 0.5 ? '#000' : '#fff';
+}
+function srgb(v){ v = v/255; return v <= 0.03928 ? v/12.92 : Math.pow((v+0.055)/1.055,2.4); }
 
 /* theme toggle */
+(function initThemeButton(){
+  const body = document.body;
+  const cur = body.getAttribute('data-theme') || 'light';
+  themeToggle.textContent = cur === 'light' ? '🌙' : '☀️';
+})();
 themeToggle.addEventListener('click', ()=>{
   const body = document.body;
   const cur = body.getAttribute('data-theme') || 'light';
   const next = cur === 'light' ? 'dark' : 'light';
   body.setAttribute('data-theme', next);
-  themeToggle.textContent = next === 'light' ? '☀️' : '🌙';
+  themeToggle.textContent = next === 'light' ? '🌙' : '☀️';
 });
 
 /* sidebar toggle (mobile) */
@@ -364,10 +402,11 @@ sidebarToggle && sidebarToggle.addEventListener('click', ()=>{
 
 /* back button (mobile): show sidebar and hide chat */
 backBtn && backBtn.addEventListener('click', ()=>{
-  // show sidebar, hide chat on small screens
   if(window.matchMedia('(max-width:900px)').matches){
     sidebar.classList.remove('hidden');
     chatPanel.classList.add('hidden');
+    chatPanel.setAttribute('aria-hidden','true');
+    sidebar.setAttribute('aria-hidden','false');
   }
 });
 
@@ -376,22 +415,28 @@ overlay.addEventListener('click', (e)=>{ if(e.target === overlay) overlay.style.
 
 /* ======= Welcome / Name flow (Option B) ======= */
 function openWelcomeIfNeeded(){
-  // if name not stored -> show welcome overlay and block app
   if(!deviceName){
-    welcome.style.display = 'flex';
+    welcome.classList.add('active');
     welcome.classList.remove('hidden');
+    welcome.style.display = 'flex';
     welcomeName.focus();
-    // hide main chat area until user enters name
+    // hide main UI behind welcome (avoid mixing)
+    document.getElementById('appRoot').style.filter = 'blur(2px) brightness(.8)';
     sidebar.classList.add('hidden');
     chatPanel.classList.add('hidden');
+    chatPanel.setAttribute('aria-hidden','true');
+    sidebar.setAttribute('aria-hidden','true');
   } else {
-    // name exists: hide welcome and show UI according to screen size
-    welcome.style.display = 'none';
+    welcome.classList.remove('active');
     welcome.classList.add('hidden');
+    welcome.style.display = 'none';
+    document.getElementById('appRoot').style.filter = '';
     if(window.matchMedia('(max-width:900px)').matches){
       sidebar.classList.remove('hidden'); chatPanel.classList.add('hidden');
+      chatPanel.setAttribute('aria-hidden','true'); sidebar.setAttribute('aria-hidden','false');
     } else {
       sidebar.classList.remove('hidden'); chatPanel.classList.remove('hidden');
+      chatPanel.setAttribute('aria-hidden','false'); sidebar.setAttribute('aria-hidden','false');
     }
   }
 }
@@ -399,22 +444,17 @@ function openWelcomeIfNeeded(){
 startBtn.addEventListener('click', ()=>{
   const name = (welcomeName.value || '').trim();
   if(!name){ alert('Please enter a display name'); welcomeName.focus(); return; }
-  // Save identity (overwrite any previous)
   saveLocalIdentity(name, deterministicColor(name));
-  // Hide welcome UI
   welcome.classList.add('hidden');
   setTimeout(()=> welcome.style.display='none', 300);
-  // Show appropriate UI
+  document.getElementById('appRoot').style.filter = '';
   if(window.matchMedia('(max-width:900px)').matches){
     sidebar.classList.remove('hidden'); chatPanel.classList.add('hidden');
   } else {
     sidebar.classList.remove('hidden'); chatPanel.classList.remove('hidden');
   }
-  // initialize rest of app now that identity exists
   initAfterIdentity();
 });
-
-/* allow Enter key to submit on welcome */
 welcomeName.addEventListener('keydown', e=>{ if(e.key==='Enter') startBtn.click(); });
 
 /* ======= Firebase paths & state ======= */
@@ -446,8 +486,8 @@ function attachRoomsListener(){
     for(const k of keys){
       const meta = data[k];
       const item = document.createElement('div'); item.className='roomItem';
-      item.innerHTML = `<div class="roomAvatar">${escapeHtml(k.slice(0,2).toUpperCase())}</div>
-        <div class="roomMeta"><div class="roomTitle">${escapeHtml(k)}</div><div class="roomSub">${meta.password ? '🔒 Private' : 'Public'}</div></div>`;
+      item.innerHTML = `<div class="roomAvatar">${esc(k.slice(0,2).toUpperCase())}</div>
+        <div class="roomMeta"><div class="roomTitle">${esc(k)}</div><div class="roomSub">${meta && meta.password ? '🔒 Private' : 'Public'}</div></div>`;
       item.onclick = ()=> tryJoinRoom(k);
       roomListEl.appendChild(item);
     }
@@ -465,13 +505,13 @@ async function tryJoinRoom(roomId){
     if(entered !== meta.password) return alert('Wrong password');
   }
   openRoom(roomId, meta);
-  // mobile: hide sidebar and show chat
   if(window.matchMedia('(max-width:900px)').matches){
     sidebar.classList.add('hidden');
     chatPanel.classList.remove('hidden');
-    // ensure chat panel visible
+    chatPanel.setAttribute('aria-hidden','false'); sidebar.setAttribute('aria-hidden','true');
   } else {
     chatPanel.classList.remove('hidden');
+    chatPanel.setAttribute('aria-hidden','false');
   }
 }
 
@@ -489,6 +529,11 @@ async function openRoom(roomId, meta){
   // set presence
   await set(ref(db, `online/${roomId}/${deviceId}`), { name: deviceName, color: deviceColor, ts: Date.now() });
 
+  try{
+    onDisconnect(ref(db, `online/${roomId}/${deviceId}`)).remove();
+    onDisconnect(ref(db, `typing/${roomId}/${deviceId}`)).remove();
+  }catch(e){ console.warn('onDisconnect failed', e); }
+
   // online listener
   onValue(onlineRef, snap=>{
     const val = snap.val() || {};
@@ -499,6 +544,8 @@ async function openRoom(roomId, meta){
       const u = val[id];
       const el = document.createElement('div'); el.className='onlineItem';
       el.style.borderLeft = '6px solid ' + (u.color || '#777');
+      el.style.padding = '6px 10px';
+      el.style.borderRadius = '6px';
       el.textContent = (u.name || id);
       onlineListEl.appendChild(el);
     }
@@ -537,7 +584,12 @@ async function renderMessage(key, m){
     const row = document.createElement('div'); row.className = 'msgRow ' + (m.deviceId === deviceId ? 'me' : 'other');
     const bubble = document.createElement('div');
     bubble.className = 'bubble ' + (m.deviceId === deviceId ? 'me' : 'other');
-    bubble.style.background = m.color || deterministicColor(m.deviceName || m.deviceId);
+
+    // choose background color (user-specified color preferred)
+    const bg = (m.color && /^#?[0-9A-Fa-f]{6}$/.test(m.color)) ? (m.color[0]==="#"?m.color:"#"+m.color) : (m.deviceId === deviceId ? getComputedStyle(document.documentElement).getPropertyValue('--bubble-me').trim() : getComputedStyle(document.documentElement).getPropertyValue('--bubble-other').trim());
+    bubble.style.background = bg;
+    // set readable text color on bubble
+    bubble.style.color = contrastColorForHex(bg.replace('#',''));
 
     // header: sender
     const sender = document.createElement('div'); sender.className = 'sender';
@@ -704,8 +756,18 @@ async function sendMessage(){
     delete messageInput.dataset.replyToKey; delete messageInput.dataset.replyToText;
     messageInput.placeholder = 'Message';
   }
-  await push(ref(db, `messages/${currentRoom}`), payload);
+  try{
+    const pushed = await push(ref(db, `messages/${currentRoom}`), payload);
+    const key = pushed.key;
+    messageKeysAdded.push({ room: currentRoom, key });
+    try{
+      onDisconnect(ref(db, `messages/${currentRoom}/${key}`)).remove();
+    }catch(e){ console.warn('onDisconnect for message failed', e); }
+  }catch(e){
+    console.error('send message failed', e);
+  }
   messageInput.value='';
+  colorPicker.value='';
   await remove(ref(db, `typing/${currentRoom}/${deviceId}`));
 }
 
@@ -744,37 +806,67 @@ setInterval(async ()=>{
   }
 }, 5000);
 
-/* ======= Small utilities ======= */
-function escHtml(s){ return esc(s); }
-function escapeHtml(s){ if(!s) return ''; return s.toString().replace(/[&<>"']/g, m=> ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
+/* ======= Cleanup user on unload ======= */
+let cleanupInProgress = false;
+async function cleanupUser(){
+  if(cleanupInProgress) return;
+  cleanupInProgress = true;
+  try{
+    if(currentRoom){
+      try{ await remove(ref(db, `online/${currentRoom}/${deviceId}`)); }catch(e){/*ignore*/ }
+      try{ await remove(ref(db, `typing/${currentRoom}/${deviceId}`)); }catch(e){/*ignore*/ }
+    }
+    for(const rec of messageKeysAdded){
+      try{ await remove(ref(db, `messages/${rec.room}/${rec.key}`)); }catch(e){ /*ignore*/ }
+    }
+    try{
+      const roomsSnap = await get(ref(db, 'rooms'));
+      const rooms = roomsSnap.val() || {};
+      for(const r in rooms){
+        try{ await remove(ref(db, `online/${r}/${deviceId}`)); }catch(e){/*ignore*/ }
+        try{ await remove(ref(db, `typing/${r}/${deviceId}`)); }catch(e){/*ignore*/ }
+      }
+    }catch(e){ /*ignore*/ }
+    localStorage.removeItem('wa_device_name');
+    localStorage.removeItem('wa_device_color');
+    localStorage.removeItem('wa_device_id');
+  }catch(e){
+    console.warn('cleanupUser error', e);
+  }finally{
+    cleanupInProgress = false;
+  }
+}
+window.addEventListener('beforeunload', (e)=>{
+  cleanupUser();
+});
+document.addEventListener('visibilitychange', ()=>{
+  if(document.visibilityState === 'hidden') cleanupUser();
+});
 
-/* ======= Initialize after name is set ======= */
+/* ======= Small utilities & init ======= */
+function escHtml(s){ return esc(s); }
+function escapeHtml(s){ return esc(s); }
+
 function initAfterIdentity(){
-  // ensure color saved
   if(!deviceColor){ deviceColor = deterministicColor(deviceName || deviceId); localStorage.setItem('wa_device_color', deviceColor); }
-  // attach listeners
   attachRoomsListener();
-  // show chat area on desktop
   if(window.matchMedia('(min-width:901px)').matches){
     chatPanel.classList.remove('hidden');
     sidebar.classList.remove('hidden');
+    chatPanel.setAttribute('aria-hidden','false'); sidebar.setAttribute('aria-hidden','false');
   } else {
     chatPanel.classList.add('hidden');
     sidebar.classList.remove('hidden');
+    chatPanel.setAttribute('aria-hidden','true'); sidebar.setAttribute('aria-hidden','false');
   }
 }
 
-/* ======= Ensure local identity on load ======= */
 (function init(){
-  // if name stored, prefill welcome input
   if(deviceName) welcomeName.value = deviceName;
   openWelcomeIfNeeded();
-  // if user already had name (e.g. reloaded) initialize listeners
   if(deviceName) initAfterIdentity();
-  // keyboard shortcuts: ESC closes overlays & leave reply mode
   document.addEventListener('keydown', (e)=>{ if(e.key==='Escape'){ overlay.style.display='none'; messageInput.dataset.replyToKey=''; messageInput.placeholder='Message'; } });
 })();
-
 </script>
 </body>
 </html>
