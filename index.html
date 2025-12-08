@@ -1,231 +1,780 @@
-<!DOCTYPE html>
-<html>
+<!doctype html>
+<html lang="en">
 <head>
-    <title>Chat App</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>WhatsApp-style Chat (Demo)</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+<style>
+/* ====== Base / WhatsApp-ish iPhone style ====== */
+:root{
+  --bg:#f6f8fb; --card:#ffffff; --muted:#9aa4b2; --accent:#25d366;
+  --bubble-me:#dcf8c6; --bubble-other:#ffffff;
+  --sidebar-w:320px;
+  --anim-fast:220ms;
+}
+[data-theme="dark"]{
+  --bg:#041018; --card:#062027; --muted:#92a6b3; --accent:#25d366;
+  --bubble-me:#154d2b; --bubble-other:#08333a;
+  color-scheme: dark;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0;
+  font-family:Inter, system-ui, -apple-system, "Helvetica Neue", Arial;
+  background:linear-gradient(180deg,var(--bg),#fff);
+  min-height:100vh;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale;
+}
 
-    <style>
-        body {
-            font-family: Arial;
-            background: #f1f1f1;
-            height: 100vh;
-            margin: 0;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
+/* App container - full width on desktop */
+.app{
+  width:100%;
+  max-width:1400px;
+  height:100vh;
+  border-radius:12px;
+  overflow:hidden;
+  display:flex;
+  background:var(--card);
+  box-shadow:0 18px 50px rgba(0,0,0,0.12);
+  position:relative;
+}
 
-        #loginBox, #chatBox {
-            width: 90%;
-            max-width: 400px;
-            background: white;
-            padding: 20px;
-            box-shadow: 0 0 10px #aaa;
-            border-radius: 10px;
-        }
+/* Sidebar (left column) */
+.sidebar{
+  width:var(--sidebar-w);
+  min-width:var(--sidebar-w);
+  display:flex;
+  flex-direction:column;
+  border-right:1px solid rgba(0,0,0,0.06);
+  background:linear-gradient(180deg, rgba(255,255,255,0.02), transparent);
+  transform:translateX(0);
+  transition:transform var(--anim-fast) ease, box-shadow var(--anim-fast) ease;
+  z-index:20;
+}
 
-        #chatBox { display: none; height: 80vh; flex-direction: column; }
+/* When hidden on mobile */
+.sidebar.hidden { transform: translateX(-110%); box-shadow:none; }
 
-        #messages {
-            flex: 1;
-            overflow-y: auto;
-            border: 1px solid #ddd;
-            padding: 10px;
-            background: #fafafa;
-        }
+/* header */
+.header{
+  height:72px; display:flex; align-items:center; justify-content:space-between;
+  padding:12px 14px; border-bottom:1px solid rgba(0,0,0,0.04);
+}
+.brand{display:flex;align-items:center;gap:12px}
+.brand .logo{width:46px;height:46px;border-radius:12px;background:var(--accent);display:flex;align-items:center;justify-content:center;color:white;font-weight:700}
+.header .actions{display:flex;gap:8px;align-items:center}
+.iconBtn{background:transparent;border:none;padding:8px;border-radius:10px;cursor:pointer;font-size:18px}
 
-        .msg {
-            padding: 10px;
-            border-radius: 8px;
-            margin-bottom: 12px;
-            position: relative;
-        }
+/* Search and create */
+.controls{padding:12px}
+.searchBox{display:flex;gap:8px;align-items:center}
+.searchBox input{flex:1;padding:10px;border-radius:999px;border:1px solid rgba(0,0,0,0.06);background:transparent}
+.createRow{display:flex;gap:8px;margin-top:10px}
+.createRow input{flex:1;padding:10px;border-radius:10px;border:1px solid rgba(0,0,0,0.06)}
+.small{font-size:12px;color:var(--muted)}
 
-        .time {
-            font-size: 10px;
-            opacity: 0.8;
-            margin-top: 4px;
-        }
+/* Room list */
+.roomList{overflow:auto;padding:8px 12px; display:flex;flex-direction:column; gap:8px}
+.roomItem{display:flex;align-items:center;gap:12px;padding:10px;border-radius:12px;background:linear-gradient(180deg, rgba(0,0,0,0.01), transparent);cursor:pointer}
+.roomItem:hover{filter:brightness(.99)}
+.roomAvatar{width:44px;height:44px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700}
+.roomMeta{flex:1;display:flex;flex-direction:column}
+.roomTitle{font-weight:600}
+.roomSub{font-size:12px;color:var(--muted)}
 
-        .deleteBtn {
-            position: absolute;
-            right: 6px;
-            top: 6px;
-            font-size: 10px;
-            background: black;
-            color: white;
-            border: none;
-            padding: 3px;
-            cursor: pointer;
-        }
+/* Chat panel */
+.chat{
+  flex:1; display:flex; flex-direction:column; min-width:0;
+  position:relative; background:var(--card);
+}
 
-        #typing { font-size: 12px; color: gray; }
-        
-        #sendBox { display: flex; }
-        #msgInput { flex: 1; padding: 10px; }
-        button { padding: 10px; background:black; color:white; border:none; }
-    </style>
+/* chat header */
+.chatHeader{
+  height:72px;padding:10px 14px;border-bottom:1px solid rgba(0,0,0,0.04);
+  display:flex;align-items:center;justify-content:space-between;
+}
+.chatHeader .left{display:flex;gap:12px;align-items:center}
+.chatHeader .avatar{width:46px;height:46px;border-radius:12px;background:#e6eef6;display:flex;align-items:center;justify-content:center}
+.chatHeader .info{display:flex;flex-direction:column;min-width:0}
+.chatHeader .title{font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.chatHeader .status{font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* Back button - mobile only */
+.backBtn{display:none;margin-right:6px;padding:8px;border-radius:8px;border:none;background:transparent;cursor:pointer}
+
+/* messages */
+.messages{flex:1; padding:12px; overflow:auto; background:linear-gradient(180deg, rgba(0,0,0,0.01), transparent)}
+.msgRow{display:flex; width:100%;}
+.msgRow.me{justify-content:flex-end}
+.bubble{
+  display:inline-block; max-width:78%; padding:10px 12px; border-radius:18px; position:relative; margin:6px 0; word-break:break-word; box-shadow:0 2px 6px rgba(0,0,0,0.04);
+}
+.bubble .sender{font-weight:700;font-size:12px;margin-bottom:6px}
+.bubble .text{white-space:pre-wrap}
+.bubble .meta{font-size:11px; opacity:.75; margin-top:6px; display:flex;align-items:center;gap:8px}
+.bubble.me{background:var(--bubble-me)}
+.bubble.other{background:var(--bubble-other)}
+.bubble .actions{position:absolute; top:6px; right:8px; display:flex; gap:6px}
+.smallIcon{font-size:12px; padding:6px; border-radius:6px; cursor:pointer; opacity:.8}
+
+/* composer */
+.composer{display:flex;padding:10px;border-top:1px solid rgba(0,0,0,0.04);gap:8px;align-items:center}
+.composer input{flex:1;padding:12px;border-radius:999px;border:1px solid rgba(0,0,0,0.06);background:transparent}
+.composer .sendBtn{background:var(--accent);color:white;padding:10px 12px;border-radius:999px;border:none;cursor:pointer}
+
+/* small helpers */
+.pill{padding:6px 10px;border-radius:999px;background:rgba(0,0,0,0.04);font-size:12px}
+.topRightControls{display:flex;gap:8px;align-items:center}
+
+/* overlays / panels */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,0.4);display:none;align-items:center;justify-content:center;z-index:40}
+.panel{background:var(--card);padding:18px;border-radius:10px;width:90%;max-width:420px}
+.field{margin-top:10px}
+
+/* Welcome full-screen (option B) */
+#welcome {
+  position:absolute; inset:0; z-index:60;
+  display:flex; align-items:center; justify-content:center;
+  background:linear-gradient(180deg, rgba(0,0,0,0.38), rgba(0,0,0,0.22));
+  transition:opacity var(--anim-fast) ease, visibility var(--anim-fast);
+}
+#welcome .box{
+  width:100%; max-width:520px; background:var(--card); border-radius:12px; padding:28px; text-align:center;
+  transform:translateY(0); transition:transform var(--anim-fast) ease, opacity var(--anim-fast) ease;
+  box-shadow:0 20px 50px rgba(0,0,0,0.12);
+}
+#welcome h1{margin:0 0 12px;font-size:24px}
+#welcome p{margin:0 0 18px;color:var(--muted)}
+#welcome .nameInput{width:100%; padding:12px;border-radius:10px;border:1px solid rgba(0,0,0,0.08); margin-bottom:12px}
+#welcome .startBtn{background:var(--accent); color:white; padding:12px 18px; border-radius:10px; border:none; cursor:pointer}
+
+/* Animations: hide */
+#welcome.hidden{opacity:0; visibility:hidden; transform:none; pointer-events:none}
+
+/* mobile responsive */
+@media (max-width:900px){
+  .app{border-radius:0}
+  /* hide sidebar by default on small screens; show toggle */
+  .sidebar{position:absolute;left:0;top:0;bottom:0;height:100%;box-shadow:0 20px 40px rgba(0,0,0,0.12)}
+  .sidebar.hidden{transform:translateX(-110%);}
+  .chat{flex:1; margin-left:0}
+  .brand .logo{width:40px;height:40px}
+  .backBtn{display:inline-flex}
+  .header .actions{gap:6px}
+  /* when the page loads on mobile, we want to show room list first.
+     A CSS helper will let JS toggle visibility (class 'show-chat') */
+  .chat.hidden { display:none; }
+}
+
+/* small mobile tweaks */
+@media (max-width:520px){
+  #welcome .box{margin:18px}
+  .searchBox input{padding:8px}
+  .createRow input{padding:8px}
+}
+</style>
 </head>
+<body data-theme="light">
+<div class="app" role="application" aria-label="WhatsApp style chat">
 
-<body>
-
-<div id="loginBox">
-    <h2>Enter Access</h2>
-
-    <input id="accessID" type="password" placeholder="Enter ID 5689" style="width:100%;padding:10px;margin-bottom:10px;">
-
-    <input id="deviceName" type="text" placeholder="Enter device name (Phone / Laptop)" style="width:100%;padding:10px;">
-
-    <button onclick="login()" style="width:100%;margin-top:10px;">Enter</button>
-</div>
-
-<div id="chatBox">
-    <h2>Chat</h2>
-    <div id="messages"></div>
-    <div id="typing"></div>
-
-    <audio id="notifySound">
-        <source src="https://actions.google.com/sounds/v1/cartoon/wood_plank_flicks.ogg" type="audio/ogg">
-    </audio>
-
-    <div id="sendBox">
-        <input id="msgInput" type="text" placeholder="Type message">
-        <button onclick="sendMessage()">Send</button>
+  <!-- LEFT: header + controls + room list -->
+  <div class="sidebar" id="sidebar">
+    <div class="header">
+      <div class="brand">
+        <div class="logo">WA</div>
+        <div><strong>Chat</strong></div>
+      </div>
+      <div class="actions">
+        <button class="iconBtn" id="themeToggle" title="Toggle theme">🌙</button>
+      </div>
     </div>
+
+    <div class="controls">
+      <div class="searchBox">
+        <input id="searchRoomInput" placeholder="Search rooms or messages...">
+        <button id="searchBtn" class="iconBtn">🔎</button>
+      </div>
+
+      <div class="createRow">
+        <input id="createRoomId" placeholder="New room id">
+        <button id="createRoomBtn">Create</button>
+      </div>
+
+      <div class="createRow" style="margin-top:8px">
+        <input id="createRoomPass" placeholder="Room password (optional)">
+        <input id="createAdminPass" placeholder="Admin password (optional)">
+      </div>
+
+      <div class="small" style="margin-top:8px">Enter your device name on first join</div>
+    </div>
+
+    <div class="roomList" id="roomList" role="list" aria-label="Rooms"></div>
+  </div>
+
+  <!-- RIGHT: chat panel -->
+  <div class="chat hidden" id="chatPanel">
+    <div class="chatHeader">
+      <div class="left">
+        <button id="backBtn" class="backBtn" title="Back">←</button>
+        <button id="sidebarToggle" class="iconBtn" title="Toggle sidebar">☰</button>
+        <div class="avatar" id="chatAvatar">💬</div>
+        <div class="info">
+          <div class="title" id="chatTitle">Select a room</div>
+          <div class="status" id="chatStatus">—</div>
+        </div>
+      </div>
+
+      <div class="topRightControls">
+        <div id="onlineCount" class="pill">0 online</div>
+        <button id="pinBtn" class="themeBtn">Pin</button>
+        <button id="deleteRoomBtn" class="themeBtn">Delete Room</button>
+      </div>
+    </div>
+
+    <div class="onlineList" id="onlineList" aria-live="polite"></div>
+
+    <div id="messages" class="messages" role="log" aria-atomic="false"></div>
+
+    <div id="typingLine" class="small" style="padding:6px 12px;color:var(--muted)"></div>
+
+    <div class="composer">
+      <input id="messageInput" placeholder="Message">
+      <input id="colorPicker" placeholder="#aabbcc" style="width:110px">
+      <button class="sendBtn" id="sendBtn">Send</button>
+    </div>
+  </div>
 </div>
 
+<!-- Welcome full screen -->
+<div id="welcome" role="dialog" aria-modal="true" aria-label="Enter display name">
+  <div class="box" id="welcomeBox">
+    <h1>Welcome to WA Chat</h1>
+    <p>Please enter your display name to continue.</p>
+    <input id="welcomeName" class="nameInput" type="text" placeholder="Your display name (e.g. Alex Phone)" maxlength="40" />
+    <div style="display:flex;gap:8px;justify-content:center">
+      <button id="startBtn" class="startBtn">Start Chat</button>
+    </div>
+  </div>
+</div>
+
+<!-- overlays / modals -->
+<div id="overlay" class="overlay" role="dialog" aria-hidden="true">
+  <div class="panel" id="overlayPanel"></div>
+</div>
+
+<!-- Firebase SDK (modular) -->
 <script type="module">
+/* ========= FIREBASE IMPORTS ========= */
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-app.js";
+import {
+  getDatabase, ref, set, push, onValue, remove, get, update
+} from "https://www.gstatic.com/firebasejs/10.12.3/firebase-database.js";
 
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getDatabase, ref, push, onValue, remove, set }
-from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
-
+/* ===== REPLACE with your Firebase config if needed ===== */
 const firebaseConfig = {
-    apiKey: "AIzaSyDRQq8I9ebaYGiyYy0LfKXTy5IFDzj8PFE",
-    authDomain: "message-d4df0.firebaseapp.com",
-    databaseURL: "https://message-d4df0-default-rtdb.asia-southeast1.firebasedatabase.app/",
-    projectId: "message-d4df0",
-    storageBucket: "message-d4df0.firebasestorage.app",
-    messagingSenderId: "1004865992718",
-    appId: "1:1004865992718:web:cbd37f7bcfce36521c645f"
+  apiKey: "AIzaSyDRQq8I9ebaYGiyYy0LfKXTy5IFDzj8PFE",
+  authDomain: "message-d4df0.firebaseapp.com",
+  databaseURL: "https://message-d4df0-default-rtdb.asia-southeast1.firebasedatabase.app/",
+  projectId: "message-d4df0",
+  storageBucket: "message-d4df0.firebasedestorage.app",
+  messagingSenderId: "1004865992718",
+  appId: "1:1004865992718:web:cbd37f7bcfce36521c645f"
 };
 
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
-const chatRef = ref(db, "chat");
-const typingRef = ref(db, "typing");
 
-let device = "";
-let bgColor = "";
-let textColor = "";
+/* ========= App state & helpers ========= */
+const sidebar = document.getElementById('sidebar');
+const chatPanel = document.getElementById('chatPanel');
+const roomListEl = document.getElementById('roomList');
+const createRoomBtn = document.getElementById('createRoomBtn');
+const createRoomId = document.getElementById('createRoomId');
+const createRoomPass = document.getElementById('createRoomPass');
+const createAdminPass = document.getElementById('createAdminPass');
+const searchRoomInput = document.getElementById('searchRoomInput');
 
-// ******************************
-// AUTO COLOR + READABLE TEXT
-// ******************************
-function getColorSet() {
-    const sets = [
-        { bg: "#007bff", text: "white" },   // Blue
-        { bg: "#28a745", text: "black" },   // Green
-        { bg: "#ff9900", text: "black" },   // Orange
-        { bg: "#6f42c1", text: "white" }    // Purple
-    ];
+const chatTitle = document.getElementById('chatTitle');
+const chatStatus = document.getElementById('chatStatus');
+const messagesEl = document.getElementById('messages');
+const onlineListEl = document.getElementById('onlineList');
+const onlineCount = document.getElementById('onlineCount');
+const typingLine = document.getElementById('typingLine');
+const messageInput = document.getElementById('messageInput');
+const sendBtn = document.getElementById('sendBtn');
+const colorPicker = document.getElementById('colorPicker');
+const overlay = document.getElementById('overlay');
+const overlayPanel = document.getElementById('overlayPanel');
+const deleteRoomBtn = document.getElementById('deleteRoomBtn');
+const pinBtn = document.getElementById('pinBtn');
+const themeToggle = document.getElementById('themeToggle');
+const sidebarToggle = document.getElementById('sidebarToggle');
+const backBtn = document.getElementById('backBtn');
 
-    return sets[Math.floor(Math.random() * sets.length)];
+const welcome = document.getElementById('welcome');
+const welcomeName = document.getElementById('welcomeName');
+const startBtn = document.getElementById('startBtn');
+
+let deviceId = localStorage.getItem('wa_device_id');
+if(!deviceId){ deviceId = 'u_' + Math.random().toString(36).slice(2,9); localStorage.setItem('wa_device_id', deviceId); }
+let deviceName = localStorage.getItem('wa_device_name') || '';
+let deviceColor = localStorage.getItem('wa_device_color') || '';
+
+function saveLocalIdentity(name,color){
+  if(name){ deviceName = name; localStorage.setItem('wa_device_name', name); }
+  if(color){ deviceColor = color; localStorage.setItem('wa_device_color', color); }
+}
+function ensureIdentity(){
+  if(!deviceName) return false;
+  if(!deviceColor){
+    deviceColor = deterministicColor(deviceName || deviceId);
+    localStorage.setItem('wa_device_color', deviceColor);
+  }
+  return true;
+}
+function deterministicColor(s){
+  const palette = ["#2b7cff","#2fc27f","#ffb84d","#9863ff","#ff6b6b","#06b6d4","#f97316","#7c3aed"];
+  if(!s) return palette[0];
+  let h=0; for(let i=0;i<s.length;i++) h=(h<<5)-h + s.charCodeAt(i);
+  return palette[Math.abs(h) % palette.length];
 }
 
-// LOGIN
-window.login = function() {
-    let id = document.getElementById("accessID").value;
-    device = document.getElementById("deviceName").value.trim();
+/* simple sanitize */
+function esc(s){ if(!s) return ''; return s.toString().replace(/[&<>"']/g, m=> ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
 
-    if (!device) return alert("Enter device name!");
+/* theme toggle */
+themeToggle.addEventListener('click', ()=>{
+  const body = document.body;
+  const cur = body.getAttribute('data-theme') || 'light';
+  const next = cur === 'light' ? 'dark' : 'light';
+  body.setAttribute('data-theme', next);
+  themeToggle.textContent = next === 'light' ? '☀️' : '🌙';
+});
 
-    if (id === "5689") {
-        document.getElementById("loginBox").style.display = "none";
-        document.getElementById("chatBox").style.display = "flex";
+/* sidebar toggle (mobile) */
+sidebarToggle && sidebarToggle.addEventListener('click', ()=>{
+  if(sidebar.classList.contains('hidden')) sidebar.classList.remove('hidden');
+  else sidebar.classList.toggle('hidden');
+});
 
-        let colorSet = getColorSet();
-        bgColor = colorSet.bg;
-        textColor = colorSet.text;
+/* back button (mobile): show sidebar and hide chat */
+backBtn && backBtn.addEventListener('click', ()=>{
+  // show sidebar, hide chat on small screens
+  if(window.matchMedia('(max-width:900px)').matches){
+    sidebar.classList.remove('hidden');
+    chatPanel.classList.add('hidden');
+  }
+});
+
+/* close overlay when clicked out */
+overlay.addEventListener('click', (e)=>{ if(e.target === overlay) overlay.style.display='none'; });
+
+/* ======= Welcome / Name flow (Option B) ======= */
+function openWelcomeIfNeeded(){
+  // if name not stored -> show welcome overlay and block app
+  if(!deviceName){
+    welcome.style.display = 'flex';
+    welcome.classList.remove('hidden');
+    welcomeName.focus();
+    // hide main chat area until user enters name
+    sidebar.classList.add('hidden');
+    chatPanel.classList.add('hidden');
+  } else {
+    // name exists: hide welcome and show UI according to screen size
+    welcome.style.display = 'none';
+    welcome.classList.add('hidden');
+    if(window.matchMedia('(max-width:900px)').matches){
+      sidebar.classList.remove('hidden'); chatPanel.classList.add('hidden');
     } else {
-        alert("Incorrect ID");
+      sidebar.classList.remove('hidden'); chatPanel.classList.remove('hidden');
     }
-};
+  }
+}
 
-// SEND MESSAGE
-window.sendMessage = function() {
-    let msg = document.getElementById("msgInput").value;
-    if (msg.trim() === "") return;
-
-    push(chatRef, {
-        text: msg,
-        device: device,
-        bg: bgColor,
-        textColor: textColor,
-        timestamp: Date.now()
-    });
-
-    document.getElementById("msgInput").value = "";
-    set(typingRef, "");
-};
-
-// TYPING INDICATOR
-msgInput.oninput = () => {
-    set(typingRef, device + " is typing...");
-    setTimeout(() => set(typingRef, ""), 2000);
-};
-
-// SHOW TYPING
-onValue(typingRef, (s) => {
-    document.getElementById("typing").innerText = s.val() || "";
+startBtn.addEventListener('click', ()=>{
+  const name = (welcomeName.value || '').trim();
+  if(!name){ alert('Please enter a display name'); welcomeName.focus(); return; }
+  // Save identity (overwrite any previous)
+  saveLocalIdentity(name, deterministicColor(name));
+  // Hide welcome UI
+  welcome.classList.add('hidden');
+  setTimeout(()=> welcome.style.display='none', 300);
+  // Show appropriate UI
+  if(window.matchMedia('(max-width:900px)').matches){
+    sidebar.classList.remove('hidden'); chatPanel.classList.add('hidden');
+  } else {
+    sidebar.classList.remove('hidden'); chatPanel.classList.remove('hidden');
+  }
+  // initialize rest of app now that identity exists
+  initAfterIdentity();
 });
 
-// DISPLAY MESSAGES
-onValue(chatRef, (snapshot) => {
-    let box = document.getElementById("messages");
-    box.innerHTML = "";
+/* allow Enter key to submit on welcome */
+welcomeName.addEventListener('keydown', e=>{ if(e.key==='Enter') startBtn.click(); });
 
-    snapshot.forEach((node) => {
-        let data = node.val();
+/* ======= Firebase paths & state ======= */
+let currentRoom = null;
+let currentRoomMeta = null;
+let msgsRef = null, typingRef = null, onlineRef = null;
+let typingTimer = null;
 
-        let msg = document.createElement("div");
-        msg.className = "msg";
-        msg.style.background = data.bg;
-        msg.style.color = data.textColor;
-
-        msg.innerHTML = `
-            <b>${data.device}</b><br>
-            ${data.text}
-            <div class="time">${new Date(data.timestamp).toLocaleTimeString()}</div>
-            <button class="deleteBtn" onclick="deleteMsg('${node.key}')">X</button>
-        `;
-
-        box.appendChild(msg);
-    });
-
-    box.scrollTop = box.scrollHeight;
-
-    document.getElementById("notifySound").play();
+/* ======= Create room ======= */
+createRoomBtn.addEventListener('click', async ()=>{
+  const id = createRoomId.value.trim();
+  if(!id){ alert('Enter a room id'); return; }
+  if(!ensureIdentity()) return alert('Name not set');
+  const pass = createRoomPass.value || '';
+  const adminPass = createAdminPass.value || '';
+  const roomMeta = { password: pass, adminId: deviceId, adminPass: adminPass || '', createdAt: Date.now() };
+  await set(ref(db, 'rooms/' + id), roomMeta);
+  createRoomId.value=''; createRoomPass.value=''; createAdminPass.value='';
+  alert('Created room: ' + id);
 });
 
-// DELETE MESSAGE
-window.deleteMsg = function(key) {
-    remove(ref(db, "chat/" + key));
-};
+/* ======= Room list live ======= */
+function attachRoomsListener(){
+  onValue(ref(db,'rooms'), snap=>{
+    const data = snap.val() || {};
+    roomListEl.innerHTML = '';
+    const keys = Object.keys(data).sort();
+    if(keys.length===0){ roomListEl.innerHTML = '<div class="small">No rooms yet</div>'; return; }
+    for(const k of keys){
+      const meta = data[k];
+      const item = document.createElement('div'); item.className='roomItem';
+      item.innerHTML = `<div class="roomAvatar">${escapeHtml(k.slice(0,2).toUpperCase())}</div>
+        <div class="roomMeta"><div class="roomTitle">${escapeHtml(k)}</div><div class="roomSub">${meta.password ? '🔒 Private' : 'Public'}</div></div>`;
+      item.onclick = ()=> tryJoinRoom(k);
+      roomListEl.appendChild(item);
+    }
+  });
+}
 
-// AUTO DELETE AFTER 24 HOURS
-onValue(chatRef, (snapshot) => {
-    let now = Date.now();
-    let day = 24 * 60 * 60 * 1000;
+/* ======= Try joining a room (password check) ======= */
+async function tryJoinRoom(roomId){
+  if(!ensureIdentity()) return alert('Name not set');
+  const snap = await get(ref(db, 'rooms/' + roomId));
+  if(!snap.exists()){ alert('Room not found'); return; }
+  const meta = snap.val();
+  if(meta.password){
+    const entered = prompt('Enter room password:') || '';
+    if(entered !== meta.password) return alert('Wrong password');
+  }
+  openRoom(roomId, meta);
+  // mobile: hide sidebar and show chat
+  if(window.matchMedia('(max-width:900px)').matches){
+    sidebar.classList.add('hidden');
+    chatPanel.classList.remove('hidden');
+    // ensure chat panel visible
+  } else {
+    chatPanel.classList.remove('hidden');
+  }
+}
 
-    snapshot.forEach((node) => {
-        if (now - node.val().timestamp > day) {
-            remove(ref(db, "chat/" + node.key));
-        }
-    });
+/* ======= Open room: attach listeners ======= */
+async function openRoom(roomId, meta){
+  currentRoom = roomId;
+  currentRoomMeta = meta || (await get(ref(db,'rooms/'+roomId))).val();
+  chatTitle.textContent = 'Room: ' + roomId;
+  chatStatus.textContent = 'Connected';
+  messagesEl.innerHTML = ''; onlineListEl.innerHTML=''; typingLine.textContent='';
+  msgsRef = ref(db, 'messages/' + roomId);
+  typingRef = ref(db, 'typing/' + roomId);
+  onlineRef = ref(db, 'online/' + roomId);
+
+  // set presence
+  await set(ref(db, `online/${roomId}/${deviceId}`), { name: deviceName, color: deviceColor, ts: Date.now() });
+
+  // online listener
+  onValue(onlineRef, snap=>{
+    const val = snap.val() || {};
+    onlineListEl.innerHTML = '';
+    const keys = Object.keys(val);
+    onlineCount.textContent = keys.length + ' online';
+    for(const id of keys){
+      const u = val[id];
+      const el = document.createElement('div'); el.className='onlineItem';
+      el.style.borderLeft = '6px solid ' + (u.color || '#777');
+      el.textContent = (u.name || id);
+      onlineListEl.appendChild(el);
+    }
+  });
+
+  // typing listener
+  onValue(typingRef, snap=>{
+    const t = snap.val() || {};
+    const names = Object.keys(t).filter(k=>k!==deviceId).map(k=>t[k]?.name || k);
+    typingLine.textContent = names.length ? names.join(', ') + ' is typing…' : '';
+  });
+
+  // messages listener
+  onValue(msgsRef, snap=>{
+    const msgs = snap.val() || {};
+    messagesEl.innerHTML = '';
+    const keys = Object.keys(msgs).sort((a,b)=> (msgs[a].ts||0) - (msgs[b].ts||0));
+    for(const k of keys) renderMessage(k, msgs[k]);
+    messagesEl.scrollTop = messagesEl.scrollHeight;
+  });
+
+  // load pinned if exists
+  const pinnedSnap = await get(ref(db, `pinned/${roomId}`));
+  if(pinnedSnap.exists()){
+    pinBtn.textContent = 'Unpin';
+  } else pinBtn.textContent = 'Pin';
+
+  // cleanup
+  await cleanupOldMessages(roomId);
+  setInterval(()=>cleanupOldMessages(roomId), 60*60*1000);
+}
+
+/* ======= Render message with features (reactions, reply, edit, delete, read receipts) ======= */
+async function renderMessage(key, m){
+  try{
+    const row = document.createElement('div'); row.className = 'msgRow ' + (m.deviceId === deviceId ? 'me' : 'other');
+    const bubble = document.createElement('div');
+    bubble.className = 'bubble ' + (m.deviceId === deviceId ? 'me' : 'other');
+    bubble.style.background = m.color || deterministicColor(m.deviceName || m.deviceId);
+
+    // header: sender
+    const sender = document.createElement('div'); sender.className = 'sender';
+    sender.innerHTML = esc(m.deviceName || m.deviceId);
+    bubble.appendChild(sender);
+
+    // reply
+    if(m.replyTo){
+      const replyDiv = document.createElement('div');
+      replyDiv.style.fontSize='12px'; replyDiv.style.opacity='.8'; replyDiv.style.padding='6px'; replyDiv.style.borderLeft='3px solid rgba(0,0,0,0.06)';
+      replyDiv.textContent = 'Reply → ' + (m.replyToText ? m.replyToText.slice(0,80) : '(deleted)');
+      bubble.appendChild(replyDiv);
+    }
+
+    // text
+    const t = document.createElement('div'); t.className='text'; t.innerHTML = esc(m.text);
+    bubble.appendChild(t);
+
+    // reactions
+    if(m.reactions){
+      const rwrap = document.createElement('div'); rwrap.style.marginTop='8px'; rwrap.style.display='flex'; rwrap.style.gap='6px';
+      const map = m.reactions;
+      for(const r in map){
+        const span = document.createElement('div'); span.className='pill'; span.style.padding='6px'; span.textContent = `${r} ${Object.keys(map[r]).length}`;
+        rwrap.appendChild(span);
+      }
+      bubble.appendChild(rwrap);
+    }
+
+    // meta: time + read receipts
+    const meta = document.createElement('div'); meta.className = 'meta';
+    const timeSpan = document.createElement('span'); timeSpan.textContent = new Date(m.ts).toLocaleTimeString();
+    meta.appendChild(timeSpan);
+
+    const readSpan = document.createElement('span');
+    if(m.readBy){
+      const readCount = Object.keys(m.readBy).length;
+      if(readCount > 0) readSpan.textContent = '✓✓'; else readSpan.textContent = '✓';
+    } else { readSpan.textContent = '✓'; }
+    meta.appendChild(readSpan);
+    bubble.appendChild(meta);
+
+    // actions
+    const actions = document.createElement('div'); actions.style.display='flex'; actions.style.gap='6px'; actions.style.marginTop='6px';
+    const replyBtn = document.createElement('button'); replyBtn.className='smallIcon'; replyBtn.textContent='↩️'; replyBtn.title='Reply';
+    replyBtn.onclick = ()=> startReply(key, m);
+    actions.appendChild(replyBtn);
+    const reactBtn = document.createElement('button'); reactBtn.className='smallIcon'; reactBtn.textContent='😊'; reactBtn.title='React';
+    reactBtn.onclick = ()=> showReactionPicker(key, m);
+    actions.appendChild(reactBtn);
+    if(m.deviceId === deviceId){
+      const editBtn = document.createElement('button'); editBtn.className='smallIcon'; editBtn.textContent='✏️'; editBtn.title='Edit';
+      editBtn.onclick = ()=> startEdit(key, m);
+      actions.appendChild(editBtn);
+    }
+    const allowDelete = (m.deviceId === deviceId) || (currentRoomMeta && currentRoomMeta.adminId === deviceId);
+    if(allowDelete){
+      const delBtn = document.createElement('button'); delBtn.className='smallIcon'; delBtn.textContent='🗑️'; delBtn.title='Delete';
+      delBtn.onclick = async ()=> { if(confirm('Delete message?')) await remove(ref(db, `messages/${currentRoom}/${key}`)); };
+      actions.appendChild(delBtn);
+    }
+    bubble.appendChild(actions);
+
+    bubble.onclick = async ()=>{
+      const readRef = ref(db, `messages/${currentRoom}/${key}/readBy/${deviceId}`);
+      await set(readRef, { name: deviceName, ts: Date.now() });
+    };
+
+    row.appendChild(bubble);
+    messagesEl.appendChild(row);
+  }catch(e){ console.error(e) }
+}
+
+/* ======== Reactions picker ======== */
+function showReactionPicker(key,m){
+  const react = prompt('Enter reaction emoji (e.g. ❤️, 👍):');
+  if(!react) return;
+  const rxRef = ref(db, `messages/${currentRoom}/${key}/reactions/${react}/${deviceId}`);
+  set(rxRef, { name: deviceName, ts: Date.now() });
+}
+
+/* ======== Reply flow ======== */
+function startReply(key,m){
+  const confirmReply = confirm(`Reply to ${m.deviceName || m.deviceId} message?`);
+  if(!confirmReply) return;
+  messageInput.dataset.replyToKey = key;
+  messageInput.dataset.replyToText = m.text.slice(0,200);
+  messageInput.placeholder = `Replying to ${m.deviceName || m.deviceId}…`;
+  messageInput.focus();
+}
+
+/* ======== Edit message flow ======== */
+function startEdit(key,m){
+  const newText = prompt('Edit message:', m.text);
+  if(newText === null) return;
+  update(ref(db, `messages/${currentRoom}/${key}`), { text: newText, edited: true }).catch(e=>console.error(e));
+}
+
+/* ======== Pin room message ======== */
+pinBtn.addEventListener('click', async ()=>{
+  if(!currentRoom) return alert('Open a room first');
+  const pinnedSnap = await get(ref(db, `pinned/${currentRoom}`));
+  if(pinnedSnap.exists()){
+    await remove(ref(db, `pinned/${currentRoom}`));
+    pinBtn.textContent = 'Pin';
+    alert('Unpinned');
+  } else {
+    const key = prompt('Enter message key to pin (or leave blank to pin latest):','');
+    if(key){
+      const mSnap = await get(ref(db, `messages/${currentRoom}/${key}`));
+      if(!mSnap.exists()) return alert('Message not found');
+      await set(ref(db, `pinned/${currentRoom}`), mSnap.val());
+      pinBtn.textContent = 'Unpin';
+      alert('Pinned');
+    } else {
+      const messagesSnap = await get(ref(db, `messages/${currentRoom}`));
+      const msgs = messagesSnap.val() || {};
+      const keys = Object.keys(msgs).sort((a,b)=> (msgs[a].ts||0) - (msgs[b].ts||0));
+      if(keys.length===0) return alert('No messages to pin');
+      await set(ref(db, `pinned/${currentRoom}`), msgs[keys[keys.length-1]]);
+      pinBtn.textContent = 'Unpin'; alert('Pinned latest');
+    }
+  }
 });
+
+/* ======== Delete entire room (admin only) ======== */
+deleteRoomBtn.addEventListener('click', async ()=>{
+  if(!currentRoom) return alert('Open a room first');
+  const snap = await get(ref(db, `rooms/${currentRoom}`));
+  const meta = snap.val() || {};
+  if(meta.adminId !== deviceId){
+    const pass = prompt('Enter admin password to delete room (or leave blank):') || '';
+    if(pass !== meta.adminPass) return alert('Not authorized');
+  }
+  if(!confirm('Delete entire room and all messages?')) return;
+  await remove(ref(db, `rooms/${currentRoom}`));
+  await remove(ref(db, `messages/${currentRoom}`));
+  await remove(ref(db, `online/${currentRoom}`));
+  await remove(ref(db, `typing/${currentRoom}`));
+  alert('Room deleted');
+  currentRoom = null; messagesEl.innerHTML=''; onlineListEl.innerHTML=''; chatTitle.textContent='Select a room'; chatStatus.textContent='—';
+});
+
+/* ======== Send message (with reply context, custom color) ======== */
+sendBtn.addEventListener('click', sendMessage);
+messageInput.addEventListener('keydown', e=>{ if(e.key==='Enter') sendMessage(); else signalTyping(); });
+
+async function sendMessage(){
+  if(!currentRoom) return alert('Open a room first');
+  const text = messageInput.value.trim();
+  if(!text) return;
+  const customColor = (colorPicker.value || '').trim();
+  const color = customColor && /^#?[0-9A-Fa-f]{6}$/.test(customColor) ? (customColor[0]==="#"?customColor:"#"+customColor) : (deviceColor || deterministicColor(deviceName||deviceId));
+  const payload = {
+    text,
+    deviceId,
+    deviceName,
+    color,
+    ts: Date.now()
+  };
+  if(messageInput.dataset.replyToKey){
+    payload.replyTo = messageInput.dataset.replyToKey;
+    payload.replyToText = messageInput.dataset.replyToText || '';
+    delete messageInput.dataset.replyToKey; delete messageInput.dataset.replyToText;
+    messageInput.placeholder = 'Message';
+  }
+  await push(ref(db, `messages/${currentRoom}`), payload);
+  messageInput.value='';
+  await remove(ref(db, `typing/${currentRoom}/${deviceId}`));
+}
+
+/* ======== Typing indicator ======== */
+function signalTyping(){
+  if(!currentRoom) return;
+  set(ref(db, `typing/${currentRoom}/${deviceId}`), { name: deviceName, ts: Date.now() }).catch(()=>{});
+  if(typingTimer) clearTimeout(typingTimer);
+  typingTimer = setTimeout(()=> remove(ref(db, `typing/${currentRoom}/${deviceId}`)).catch(()=>{}), 1800);
+}
+
+/* ======== cleanup old messages after 24h ======== */
+async function cleanupOldMessages(roomId){
+  if(!roomId) return;
+  try{
+    const snap = await get(ref(db, `messages/${roomId}`));
+    const msgs = snap.val() || {};
+    const cutoff = Date.now() - 24*60*60*1000;
+    for(const k in msgs){
+      if(msgs[k].ts && msgs[k].ts <= cutoff){
+        await remove(ref(db, `messages/${roomId}/${k}`));
+      }
+    }
+  }catch(e){ console.warn('cleanup err', e); }
+}
+
+/* ======= Mark messages visible as read (read receipts) ======= */
+setInterval(async ()=>{
+  if(!currentRoom) return;
+  const snap = await get(ref(db, `messages/${currentRoom}`));
+  const msgs = snap.val() || {};
+  for(const k in msgs){
+    if(!(msgs[k].readBy && msgs[k].readBy[deviceId])){
+      await set(ref(db, `messages/${currentRoom}/${k}/readBy/${deviceId}`), { name: deviceName, ts: Date.now() });
+    }
+  }
+}, 5000);
+
+/* ======= Small utilities ======= */
+function escHtml(s){ return esc(s); }
+function escapeHtml(s){ if(!s) return ''; return s.toString().replace(/[&<>"']/g, m=> ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
+
+/* ======= Initialize after name is set ======= */
+function initAfterIdentity(){
+  // ensure color saved
+  if(!deviceColor){ deviceColor = deterministicColor(deviceName || deviceId); localStorage.setItem('wa_device_color', deviceColor); }
+  // attach listeners
+  attachRoomsListener();
+  // show chat area on desktop
+  if(window.matchMedia('(min-width:901px)').matches){
+    chatPanel.classList.remove('hidden');
+    sidebar.classList.remove('hidden');
+  } else {
+    chatPanel.classList.add('hidden');
+    sidebar.classList.remove('hidden');
+  }
+}
+
+/* ======= Ensure local identity on load ======= */
+(function init(){
+  // if name stored, prefill welcome input
+  if(deviceName) welcomeName.value = deviceName;
+  openWelcomeIfNeeded();
+  // if user already had name (e.g. reloaded) initialize listeners
+  if(deviceName) initAfterIdentity();
+  // keyboard shortcuts: ESC closes overlays & leave reply mode
+  document.addEventListener('keydown', (e)=>{ if(e.key==='Escape'){ overlay.style.display='none'; messageInput.dataset.replyToKey=''; messageInput.placeholder='Message'; } });
+})();
 
 </script>
-
 </body>
 </html>
