@@ -200,6 +200,27 @@ body{
 
 /* helper for accessibility */
 .visually-hidden{position:absolute!important;height:1px;width:1px;overflow:hidden;clip:rect(1px,1px,1px,1px);white-space:nowrap}
+
+/* Styled logout button */
+#logoutBtn{
+  padding:8px 14px;
+  border-radius:10px;
+  background:#ff5050;
+  color:#fff;
+  border:none;
+  cursor:pointer;
+  font-weight:600;
+  display:flex;
+  align-items:center;
+  gap:6px;
+}
+#logoutBtn::before{
+  content:"🚪";
+}
+#logoutBtn:hover{
+  background:#e04646;
+}
+
 </style>
 </head>
 <body data-theme="light">
@@ -911,6 +932,21 @@ function initAfterIdentity(){
   if(deviceName) initAfterIdentity();
   document.addEventListener('keydown', (e)=>{ if(e.key==='Escape'){ overlay.style.display='none'; messageInput.dataset.replyToKey=''; messageInput.placeholder='Message'; } });
 })();
+
+/* LOGOUT BUTTON BEHAVIOR */
+document.addEventListener("DOMContentLoaded", () => {
+  const logout = document.getElementById("logoutBtn");
+  if(logout){
+    logout.addEventListener("click", () => {
+      if(confirm("Are you sure you want to logout?")){
+        localStorage.removeItem("wa_device_name");
+        localStorage.removeItem("wa_device_color");
+        location.reload();
+      }
+    });
+  }
+});
+
 </script>
 </body>
 </html>
