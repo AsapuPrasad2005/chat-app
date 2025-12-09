@@ -245,6 +245,10 @@ body{
       <div class="left">
         <button id="backBtn" class="backBtn" title="Back">←</button>
         <button id="sidebarToggle" class="iconBtn" title="Toggle sidebar">☰</button>
+
+        <!-- LEAVE CHAT BUTTON (Option B) -->
+        <button id="leaveBtn" style="padding:8px 12px;border-radius:8px;border:none;background:#ff5c5c;color:white;cursor:pointer;margin-left:4px" title="Leave chat">🚪 Leave</button>
+
         <div class="avatar" id="chatAvatar">💬</div>
         <div class="info">
           <div class="title" id="chatTitle">Select a room</div>
@@ -338,6 +342,7 @@ const pinBtn = document.getElementById('pinBtn');
 const themeToggle = document.getElementById('themeToggle');
 const sidebarToggle = document.getElementById('sidebarToggle');
 const backBtn = document.getElementById('backBtn');
+const leaveBtn = document.getElementById('leaveBtn');
 
 const welcome = document.getElementById('welcome');
 const welcomeName = document.getElementById('welcomeName');
@@ -806,6 +811,42 @@ setInterval(async ()=>{
   }
 }, 5000);
 
+/* ======= LEAVE CHAT FEATURE ======= */
+/* Removes user presence and typing in current room, clears UI, returns to room list */
+async function leaveCurrentRoom(){
+  if(!currentRoom) return;
+  try{
+    await remove(ref(db, `online/${currentRoom}/${deviceId}`));
+  }catch(e){ console.warn('leave: remove online failed', e); }
+  try{
+    await remove(ref(db, `typing/${currentRoom}/${deviceId}`));
+  }catch(e){ /* ignore */ }
+
+  // clear local UI state
+  currentRoom = null;
+  currentRoomMeta = null;
+  msgsRef = null; typingRef = null; onlineRef = null;
+
+  messagesEl.innerHTML = '';
+  onlineListEl.innerHTML = '';
+  typingLine.textContent = '';
+  chatTitle.textContent = 'Select a room';
+  chatStatus.textContent = '—';
+  onlineCount.textContent = '0 online';
+
+  // show sidebar (and hide chat on mobile)
+  sidebar.classList.remove('hidden');
+  chatPanel.classList.add('hidden');
+  chatPanel.setAttribute('aria-hidden','true');
+  sidebar.setAttribute('aria-hidden','false');
+}
+
+/* Wire leave button */
+leaveBtn.addEventListener('click', ()=>{
+  if(!currentRoom){ alert('You are not in a room'); return; }
+  if(confirm('Leave this chat?')) leaveCurrentRoom();
+});
+
 /* ======= Cleanup user on unload ======= */
 let cleanupInProgress = false;
 async function cleanupUser(){
@@ -827,9 +868,11 @@ async function cleanupUser(){
         try{ await remove(ref(db, `typing/${r}/${deviceId}`)); }catch(e){/*ignore*/ }
       }
     }catch(e){ /*ignore*/ }
-    localStorage.removeItem('wa_device_name');
-    localStorage.removeItem('wa_device_color');
-    localStorage.removeItem('wa_device_id');
+    // keep device id/name in localStorage if you want to keep identity; original code removed them on cleanup
+    // we will keep name/color so user doesn't have to re-enter next time
+    // localStorage.removeItem('wa_device_name');
+    // localStorage.removeItem('wa_device_color');
+    // localStorage.removeItem('wa_device_id');
   }catch(e){
     console.warn('cleanupUser error', e);
   }finally{
